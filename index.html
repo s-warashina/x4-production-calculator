@@ -1,0 +1,379 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>X4 生産ソルバー</title>
+<meta name="theme-color" content="#060912">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="X4 Solver">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%23060912'/><text x='32' y='45' font-family='monospace' font-weight='bold' font-size='30' fill='%2334d8e8' text-anchor='middle'>X4</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#060912; --panel:#0d1424; --panel2:#111b30; --line:#1d2c47;
+    --cyan:#34d8e8; --cyan-dim:#1a8a96; --cyan-soft:#9fe9f2;
+    --amber:#f0a830; --ember:#e85d4a; --green:#5fd29a;
+    --text:#c9d6e8; --muted:#6c809e; --faint:#43536e;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--void);color:var(--text);
+    font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;line-height:1.45;}
+  body{padding:18px;max-width:1080px;margin:0 auto;
+    background-image:radial-gradient(circle at 20% -10%, #0e1c33 0, transparent 55%),
+                     radial-gradient(circle at 100% 0%, #0c1a2c 0, transparent 45%);}
+  h1,h2,h3,.disp{font-family:'Rajdhani',sans-serif;letter-spacing:.04em;margin:0;}
+  a{color:var(--cyan)}
+  .head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+    border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:18px;}
+  .head h1{font-size:30px;font-weight:700;color:#eaf6fb;text-transform:uppercase;}
+  .head .v{font-size:13px;color:var(--cyan);border:1px solid var(--cyan-dim);
+    padding:1px 8px;border-radius:2px;letter-spacing:.12em;}
+  .head .sub{font-size:12px;color:var(--muted);margin-left:auto;}
+  .panel{background:linear-gradient(180deg,var(--panel) 0,#0a1120 100%);
+    border:1px solid var(--line);border-radius:5px;padding:16px;margin-bottom:16px;
+    position:relative;}
+  .panel::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:2px;
+    background:linear-gradient(180deg,var(--cyan),transparent);border-radius:2px;}
+  .eyebrow{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;
+    letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);margin-bottom:12px;
+    display:flex;align-items:center;gap:8px;}
+  .eyebrow .num{color:var(--faint);font-weight:700;}
+  label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:5px;}
+  select,input,button{font-family:'IBM Plex Mono',monospace;font-size:14px;
+    background:#0a1322;color:var(--text);border:1px solid var(--line);
+    border-radius:3px;padding:8px 10px;outline:none;}
+  select:focus,input:focus{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(52,216,232,.12);}
+  input[type=number]{width:100%;}
+  button{cursor:pointer;background:#0e2233;border-color:var(--cyan-dim);color:var(--cyan-soft);
+    font-weight:600;letter-spacing:.06em;transition:.12s;}
+  button:hover{background:#123347;border-color:var(--cyan);}
+  button:active{transform:translateY(1px);}
+  .btn-go{background:var(--cyan-dim);color:#04141a;border-color:var(--cyan);
+    font-family:'Rajdhani';font-size:16px;font-weight:700;letter-spacing:.14em;
+    text-transform:uppercase;padding:10px 22px;}
+  .btn-go:hover{background:var(--cyan);}
+  .btn-sm{padding:4px 9px;font-size:12px;}
+  .btn-danger{color:var(--ember);border-color:#5a2a26;background:#1c1011;}
+  .btn-danger:hover{border-color:var(--ember);background:#2a1413;}
+  .target-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;}
+  .target-row .f{flex:1;min-width:140px;}
+  .mode{display:flex;gap:0;border:1px solid var(--line);border-radius:3px;overflow:hidden;}
+  .mode button{border:none;border-radius:0;background:#0a1322;color:var(--muted);
+    padding:8px 12px;font-size:12px;}
+  .mode button.on{background:var(--cyan-dim);color:#04141a;}
+  /* stat cards */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+  .stat{background:#0a1322;border:1px solid var(--line);border-radius:4px;padding:12px 14px;}
+  .stat .k{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+  .stat .val{font-family:'Rajdhani';font-size:30px;font-weight:700;line-height:1.1;color:#eaf6fb;}
+  .stat .val.amber{color:var(--amber);} .stat .val.cyan{color:var(--cyan);}
+  /* tree */
+  .tree{font-size:13px;margin-top:4px;}
+  .tnode{padding:3px 0;border-left:1px solid var(--faint);}
+  .tnode>.row{display:flex;align-items:baseline;gap:8px;padding-left:12px;position:relative;}
+  .tnode>.row::before{content:"";position:absolute;left:0;top:11px;width:9px;height:1px;
+    background:var(--faint);}
+  .tw{font-weight:600;}
+  .tw.prod{color:var(--cyan-soft);} .tw.raw{color:var(--amber);}
+  .trate{color:var(--muted);font-size:12px;}
+  .tmod{margin-left:auto;font-size:12px;color:var(--cyan);white-space:nowrap;}
+  .tag-raw{font-size:10px;letter-spacing:.1em;color:var(--amber);border:1px solid #5a4318;
+    padding:0 5px;border-radius:2px;text-transform:uppercase;}
+  .children{margin-left:14px;}
+  /* tables */
+  table{width:100%;border-collapse:collapse;margin-top:4px;}
+  th{font-family:'Rajdhani';font-weight:600;text-align:left;font-size:12px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding:7px 8px;}
+  td{padding:7px 8px;border-bottom:1px solid #131f33;}
+  td.r,th.r{text-align:right;}
+  tr:hover td{background:#0c1626;}
+  .num{font-variant-numeric:tabular-nums;}
+  .tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  #modTable{min-width:440px;}
+  .amber{color:var(--amber);} .cyan{color:var(--cyan-soft);} .muted{color:var(--muted);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr;}}
+  /* recipe editor */
+  .rcard{background:#0a1322;border:1px solid var(--line);border-radius:4px;padding:11px 13px;margin-bottom:10px;}
+  .rcard .top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .rcard .rname{font-family:'Rajdhani';font-weight:700;font-size:18px;color:var(--cyan-soft);}
+  .rcard .rout{font-size:12px;color:var(--muted);}
+  .inrow{display:grid;grid-template-columns:1fr 110px 36px;gap:8px;margin-bottom:6px;align-items:center;}
+  .inrow input:first-child{width:100%;}
+  .hint{font-size:12px;color:var(--muted);margin:6px 0 0;}
+  .warn{color:var(--amber);}
+  .toggle{cursor:pointer;color:var(--cyan);font-size:12px;letter-spacing:.08em;user-select:none;}
+  .foot{color:var(--faint);font-size:11px;text-align:center;margin-top:8px;}
+  .empty{color:var(--muted);font-style:italic;padding:8px 0;}
+</style>
+
+<div class="head">
+  <h1>X4 生産ソルバー</h1>
+  <span class="v">v9.0</span>
+  <span class="sub">材料を再帰展開 ▸ 必要モジュール数と採掘/購入量を自動算出</span>
+</div>
+
+<div class="panel">
+  <div class="eyebrow"><span class="num">01</span> 目標設定 / Target</div>
+  <div class="target-row">
+    <div class="f">
+      <label>生産ウェア</label>
+      <select id="targetWare" style="width:100%"></select>
+    </div>
+    <div class="f">
+      <label id="amtLabel">目標生産量 (個/h)</label>
+      <input type="number" id="targetAmt" value="108" min="0" step="1">
+    </div>
+    <div>
+      <label>入力モード</label>
+      <div class="mode">
+        <button id="mRate" class="on">個/h</button>
+        <button id="mMod">モジュール数</button>
+      </div>
+    </div>
+    <button class="btn-go" id="solveBtn">▶ 計算</button>
+  </div>
+  <p class="hint" id="targetHint"></p>
+</div>
+
+<div id="results" style="display:none">
+  <div class="panel">
+    <div class="eyebrow"><span class="num">02</span> サマリー / Summary</div>
+    <div class="stats" id="statCards"></div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <div class="eyebrow"><span class="num">03</span> 生産カスケード</div>
+      <div class="tree" id="tree"></div>
+    </div>
+    <div class="panel">
+      <div class="eyebrow"><span class="num">04</span> 採掘・購入材料 <span class="tag-raw">RAW</span></div>
+      <div class="tscroll"><table id="rawTable"></table></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="eyebrow"><span class="num">05</span> 必要生産モジュール</div>
+    <div class="tscroll"><table id="modTable"></table></div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="eyebrow"><span class="num">06</span> レシピDB <span class="toggle" id="dbToggle" style="margin-left:auto">[ 表示/編集 ]</span></div>
+  <div id="dbBody">
+    <div id="recipeList"></div>
+    <div class="rcard" style="border-style:dashed;border-color:var(--cyan-dim)">
+      <div class="rname" style="font-size:15px;margin-bottom:8px;color:var(--cyan)">+ レシピを追加</div>
+      <div class="inrow" style="grid-template-columns:1fr 150px;margin-bottom:10px">
+        <input id="newName" placeholder="生産ウェア名 (例: マイクロチップ)">
+        <input id="newOut" type="number" placeholder="生産/h" min="0">
+      </div>
+      <label style="margin-top:4px">投入材料 (ウェア名 / 消費 per h)</label>
+      <div id="newInputs"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn-sm" id="addInputRow">+ 材料行</button>
+        <button class="btn-sm" id="saveRecipe" style="background:var(--cyan-dim);color:#04141a;border-color:var(--cyan)">レシピ保存</button>
+      </div>
+    </div>
+    <p class="hint">レシピを持たないウェアは自動的に「採掘・購入材料 (RAW)」として扱われます。エネルギーセルなど太陽光由来のものはレシピを作らなければRAW扱いでOKです。</p>
+  </div>
+</div>
+
+<div class="foot">データはこのブラウザに自動保存されます ▸ 数値は要・実機/Encyclopedia照合</div>
+
+<script>
+//============ default seed (user's image data, Energy Cells deduplicated) ============
+const SEED = {
+  "クレイトロニクス": { outputRate:108, inputs:[
+    {ware:"エネルギーセル", rate:560},
+    {ware:"反物質セル",     rate:400},
+    {ware:"マイクロチップ", rate:640},
+    {ware:"量子チューブ",   rate:400},
+  ]},
+};
+
+let DB = {};
+const STORE_KEY = "x4_recipes_v1";
+
+// storage shim: prefer Claude artifact storage; fall back to localStorage (standalone); then memory
+const Store = {
+  async get(k){
+    if(window.storage){ try{ const r=await window.storage.get(k); if(r&&r.value) return r.value; }catch(e){} }
+    try{ return localStorage.getItem(k); }catch(e){ return null; }
+  },
+  async set(k,v){
+    if(window.storage){ try{ await window.storage.set(k,v); return; }catch(e){} }
+    try{ localStorage.setItem(k,v); }catch(e){}
+  }
+};
+async function loadDB(){
+  const raw = await Store.get(STORE_KEY);
+  if(raw){ try{ DB = JSON.parse(raw); return; }catch(e){} }
+  DB = JSON.parse(JSON.stringify(SEED));
+  saveDB();
+}
+async function saveDB(){ await Store.set(STORE_KEY, JSON.stringify(DB)); }
+
+//============ solver: recursive BOM explosion + shared-input aggregation ============
+function solve(targetWare, targetRate){
+  const demand={}; const onPath=new Set(); let cycle=null;
+  (function add(ware,rate){
+    demand[ware]=(demand[ware]||0)+rate;
+    const rec=DB[ware]; if(!rec) return;
+    if(onPath.has(ware)){cycle=ware;return;}
+    onPath.add(ware);
+    const mods=rate/rec.outputRate;
+    rec.inputs.forEach(i=>add(i.ware, mods*i.rate));
+    onPath.delete(ware);
+  })(targetWare,targetRate);
+
+  const produced=[], raw=[];
+  Object.keys(demand).forEach(w=>{
+    const rec=DB[w];
+    if(rec){ const ex=demand[w]/rec.outputRate;
+      produced.push({ware:w,rate:demand[w],out:rec.outputRate,modsExact:ex,mods:Math.ceil(ex)});
+    } else raw.push({ware:w,rate:demand[w]});
+  });
+  produced.sort((a,b)=>b.rate-a.rate); raw.sort((a,b)=>b.rate-a.rate);
+  return {demand,produced,raw,cycle};
+}
+// build explicit cascade tree (shows where consumption comes from)
+function buildTree(ware,rate,depth){
+  const rec=DB[ware];
+  const node={ware,rate,raw:!rec,mods:rec?rate/rec.outputRate:null,children:[]};
+  if(rec && depth<12){
+    const m=rate/rec.outputRate;
+    rec.inputs.forEach(i=>node.children.push(buildTree(i.ware,m*i.rate,depth+1)));
+  }
+  return node;
+}
+
+//============ render helpers ============
+const $=s=>document.querySelector(s);
+const fmt=n=>{ if(n>=100)return Math.round(n).toLocaleString();
+  return (Math.round(n*10)/10).toLocaleString(undefined,{maximumFractionDigits:1}); };
+
+let mode="rate";
+function refreshTargetSelect(){
+  const sel=$("#targetWare"); const cur=sel.value;
+  sel.innerHTML="";
+  Object.keys(DB).forEach(w=>{ const o=document.createElement("option");o.value=w;o.textContent=w;sel.appendChild(o); });
+  if([...sel.options].some(o=>o.value===cur)) sel.value=cur;
+}
+
+function renderTree(node){
+  const isRaw=node.raw;
+  let html=`<div class="tnode"><div class="row">`+
+    `<span class="tw ${isRaw?'raw':'prod'}">${node.ware}</span>`+
+    `<span class="trate">${fmt(node.rate)}/h</span>`+
+    (isRaw?`<span class="tag-raw" style="margin-left:6px">採掘/購入</span>`
+          :`<span class="tmod">×${node.mods.toFixed(2)} mod</span>`)+
+    `</div>`;
+  if(node.children.length){
+    html+=`<div class="children">`+node.children.map(renderTree).join("")+`</div>`;
+  }
+  return html+`</div>`;
+}
+
+function runSolve(){
+  const ware=$("#targetWare").value;
+  if(!ware) return;
+  let rate=parseFloat($("#targetAmt").value)||0;
+  if(mode==="mod"){ rate=rate*(DB[ware]?DB[ware].outputRate:0); }
+  const res=solve(ware,rate);
+  $("#results").style.display="block";
+
+  const totalMods=res.produced.reduce((s,p)=>s+p.mods,0);
+  $("#statCards").innerHTML=
+    card("目標", `${ware}`, "cyan", `${fmt(rate)} 個/h`)+
+    card("総生産モジュール", totalMods, "", `${res.produced.length} 種`)+
+    card("採掘/購入材料", res.raw.length, "amber", "種類")+
+    (res.cycle?card("⚠ 循環検出","",'amber',res.cycle):"");
+
+  $("#tree").innerHTML=renderTree(buildTree(ware,rate,0));
+
+  $("#rawTable").innerHTML=`<tr><th>材料</th><th class="r">必要量/h</th><th class="r">/秒</th></tr>`+
+    (res.raw.length?res.raw.map(x=>
+      `<tr><td class="amber">${x.ware}</td><td class="r num">${fmt(x.rate)}</td>`+
+      `<td class="r num muted">${fmt(x.rate/3600)}</td></tr>`).join("")
+     :`<tr><td colspan="3" class="empty">なし</td></tr>`);
+
+  $("#modTable").innerHTML=`<tr><th>生産ウェア</th><th class="r">必要量/h</th><th class="r">1基あたり/h</th><th class="r">モジュール (実数)</th><th class="r">必要基数</th></tr>`+
+    res.produced.map(p=>
+      `<tr><td class="cyan">${p.ware}</td><td class="r num">${fmt(p.rate)}</td>`+
+      `<td class="r num muted">${fmt(p.out)}</td>`+
+      `<td class="r num muted">${p.modsExact.toFixed(2)}</td>`+
+      `<td class="r num" style="color:var(--cyan);font-weight:600">${p.mods}</td></tr>`).join("");
+}
+function card(k,val,cls,sub){
+  return `<div class="stat"><div class="k">${k}</div>`+
+    `<div class="val ${cls||''}">${val}</div>`+
+    (sub?`<div class="k" style="margin-top:2px">${sub}</div>`:"")+`</div>`;
+}
+
+//============ recipe editor ============
+function renderRecipeList(){
+  const box=$("#recipeList");
+  const keys=Object.keys(DB);
+  if(!keys.length){ box.innerHTML=`<p class="empty">レシピなし</p>`; return; }
+  box.innerHTML=keys.map(w=>{
+    const r=DB[w];
+    return `<div class="rcard"><div class="top">`+
+      `<span class="rname">${w}</span>`+
+      `<span class="rout">生産 ${fmt(r.outputRate)}/h</span>`+
+      `<button class="btn-sm btn-danger" style="margin-left:auto" data-del="${w}">削除</button></div>`+
+      `<table style="margin-top:2px"><tr><th>投入材料</th><th class="r">消費/h</th></tr>`+
+      r.inputs.map(i=>`<tr><td>${i.ware}</td><td class="r num">${fmt(i.rate)}</td></tr>`).join("")+
+      `</table></div>`;
+  }).join("");
+  box.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
+    delete DB[b.dataset.del]; saveDB(); renderRecipeList(); refreshTargetSelect();
+  });
+}
+function addInputRow(name="",rate=""){
+  const row=document.createElement("div");row.className="inrow";
+  row.innerHTML=`<input placeholder="材料ウェア名" value="${name}">`+
+    `<input type="number" placeholder="消費/h" min="0" value="${rate}">`+
+    `<button class="btn-sm btn-danger" title="行を削除">✕</button>`;
+  row.querySelector("button").onclick=()=>row.remove();
+  $("#newInputs").appendChild(row);
+}
+function saveNewRecipe(){
+  const name=$("#newName").value.trim();
+  const out=parseFloat($("#newOut").value);
+  if(!name){alert("生産ウェア名を入力してください");return;}
+  if(!out||out<=0){alert("生産/h を入力してください");return;}
+  const inputs=[];
+  $("#newInputs").querySelectorAll(".inrow").forEach(r=>{
+    const ins=r.querySelectorAll("input");
+    const w=ins[0].value.trim(), rt=parseFloat(ins[1].value);
+    if(w&&rt>0) inputs.push({ware:w,rate:rt});
+  });
+  DB[name]={outputRate:out,inputs};
+  saveDB(); renderRecipeList(); refreshTargetSelect();
+  $("#newName").value="";$("#newOut").value="";$("#newInputs").innerHTML="";addInputRow();
+}
+
+//============ wire up ============
+$("#solveBtn").onclick=runSolve;
+$("#mRate").onclick=()=>{mode="rate";$("#mRate").classList.add("on");$("#mMod").classList.remove("on");
+  $("#amtLabel").textContent="目標生産量 (個/h)";};
+$("#mMod").onclick=()=>{mode="mod";$("#mMod").classList.add("on");$("#mRate").classList.remove("on");
+  $("#amtLabel").textContent="モジュール基数";};
+$("#addInputRow").onclick=()=>addInputRow();
+$("#saveRecipe").onclick=saveNewRecipe;
+let dbOpen=true;
+$("#dbToggle").onclick=()=>{dbOpen=!dbOpen;$("#dbBody").style.display=dbOpen?"block":"none";};
+
+(async function init(){
+  await loadDB();
+  refreshTargetSelect();
+  renderRecipeList();
+  addInputRow();
+  runSolve();
+})();
+</script>
