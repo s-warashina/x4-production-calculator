@@ -162,31 +162,7 @@
   </div>
 </div>
 
-<div class="panel">
-  <div class="eyebrow"><span class="num">06</span> レシピDB <span class="toggle" id="dbToggle" style="margin-left:auto">[ 表示/編集 ]</span></div>
-  <div id="dbBody">
-    <div id="recipeList"></div>
-    <div class="rcard" style="border-style:dashed;border-color:var(--cyan-dim)">
-      <div class="rname" style="font-size:15px;margin-bottom:8px;color:var(--cyan)">+ レシピを追加</div>
-      <div class="inrow" style="grid-template-columns:1fr 150px;margin-bottom:10px">
-        <input id="newName" placeholder="生産ウェア名 (例: マイクロチップ)">
-        <input id="newOut" type="number" placeholder="生産/h" min="0">
-      </div>
-      <div class="inrow" style="grid-template-columns:1fr;margin-bottom:10px">
-        <input id="newModule" placeholder="生産モジュール名 (任意 / 例: マイクロチップ生産)">
-      </div>
-      <label style="margin-top:4px">投入材料 (ウェア名 / 消費 per h)</label>
-      <div id="newInputs"></div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="btn-sm" id="addInputRow">+ 材料行</button>
-        <button class="btn-sm" id="saveRecipe" style="background:var(--cyan-dim);color:#04141a;border-color:var(--cyan)">レシピ保存</button>
-      </div>
-    </div>
-    <p class="hint">レシピを持たないウェアは自動的に「採掘・購入材料 (RAW)」として扱われます。エネルギーセルなど太陽光由来のものはレシピを作らなければRAW扱いでOKです。</p>
-  </div>
-</div>
-
-<div class="foot">データはこのブラウザに自動保存されます ▸ 数値は要・実機/Encyclopedia照合</div>
+<div class="foot">レシピはコード内の SEED が唯一のソース ▸ 数値は要・実機/Encyclopedia照合</div>
 
 <script>
 //============ default seed (user's image data, Energy Cells deduplicated) ============
@@ -224,27 +200,8 @@ const SEED = {
   ]},
 };
 
-let DB = {};
-const STORE_KEY = "x4_recipes_v1";
-
-// storage shim: prefer Claude artifact storage; fall back to localStorage (standalone); then memory
-const Store = {
-  async get(k){
-    if(window.storage){ try{ const r=await window.storage.get(k); if(r&&r.value) return r.value; }catch(e){} }
-    try{ return localStorage.getItem(k); }catch(e){ return null; }
-  },
-  async set(k,v){
-    if(window.storage){ try{ await window.storage.set(k,v); return; }catch(e){} }
-    try{ localStorage.setItem(k,v); }catch(e){}
-  }
-};
-async function loadDB(){
-  const raw = await Store.get(STORE_KEY);
-  if(raw){ try{ DB = JSON.parse(raw); return; }catch(e){} }
-  DB = JSON.parse(JSON.stringify(SEED));
-  saveDB();
-}
-async function saveDB(){ await Store.set(STORE_KEY, JSON.stringify(DB)); }
+// SEED is the single source of truth. No persistence; recipes are edited in code.
+const DB = SEED;
 
 //============ solver: recursive BOM explosion + shared-input aggregation ============
 function solve(targetWare, targetRate){
@@ -343,68 +300,15 @@ function card(k,val,cls,sub){
     (sub?`<div class="k" style="margin-top:2px">${sub}</div>`:"")+`</div>`;
 }
 
-//============ recipe editor ============
-function renderRecipeList(){
-  const box=$("#recipeList");
-  const keys=Object.keys(DB);
-  if(!keys.length){ box.innerHTML=`<p class="empty">レシピなし</p>`; return; }
-  box.innerHTML=keys.map(w=>{
-    const r=DB[w];
-    return `<div class="rcard"><div class="top">`+
-      `<span class="rname">${w}</span>`+
-      (r.module?`<span class="rout muted">▸ ${r.module}</span>`:"")+
-      `<span class="rout">生産 ${fmt(r.outputRate)}/h</span>`+
-      `<button class="btn-sm btn-danger" style="margin-left:auto" data-del="${w}">削除</button></div>`+
-      `<table style="margin-top:2px"><tr><th>投入材料</th><th class="r">消費/h</th></tr>`+
-      r.inputs.map(i=>`<tr><td>${i.ware}</td><td class="r num">${fmt(i.rate)}</td></tr>`).join("")+
-      `</table></div>`;
-  }).join("");
-  box.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
-    delete DB[b.dataset.del]; saveDB(); renderRecipeList(); refreshTargetSelect();
-  });
-}
-function addInputRow(name="",rate=""){
-  const row=document.createElement("div");row.className="inrow";
-  row.innerHTML=`<input placeholder="材料ウェア名" value="${name}">`+
-    `<input type="number" placeholder="消費/h" min="0" value="${rate}">`+
-    `<button class="btn-sm btn-danger" title="行を削除">✕</button>`;
-  row.querySelector("button").onclick=()=>row.remove();
-  $("#newInputs").appendChild(row);
-}
-function saveNewRecipe(){
-  const name=$("#newName").value.trim();
-  const module=$("#newModule").value.trim();
-  const out=parseFloat($("#newOut").value);
-  if(!name){alert("生産ウェア名を入力してください");return;}
-  if(!out||out<=0){alert("生産/h を入力してください");return;}
-  const inputs=[];
-  $("#newInputs").querySelectorAll(".inrow").forEach(r=>{
-    const ins=r.querySelectorAll("input");
-    const w=ins[0].value.trim(), rt=parseFloat(ins[1].value);
-    if(w&&rt>0) inputs.push({ware:w,rate:rt});
-  });
-  DB[name]={outputRate:out,inputs};
-  if(module) DB[name].module=module;
-  saveDB(); renderRecipeList(); refreshTargetSelect();
-  $("#newName").value="";$("#newModule").value="";$("#newOut").value="";$("#newInputs").innerHTML="";addInputRow();
-}
-
 //============ wire up ============
 $("#solveBtn").onclick=runSolve;
 $("#mRate").onclick=()=>{mode="rate";$("#mRate").classList.add("on");$("#mMod").classList.remove("on");
   $("#amtLabel").textContent="目標生産量 (個/h)";};
 $("#mMod").onclick=()=>{mode="mod";$("#mMod").classList.add("on");$("#mRate").classList.remove("on");
   $("#amtLabel").textContent="モジュール基数";};
-$("#addInputRow").onclick=()=>addInputRow();
-$("#saveRecipe").onclick=saveNewRecipe;
-let dbOpen=true;
-$("#dbToggle").onclick=()=>{dbOpen=!dbOpen;$("#dbBody").style.display=dbOpen?"block":"none";};
 
-(async function init(){
-  await loadDB();
+(function init(){
   refreshTargetSelect();
-  renderRecipeList();
-  addInputRow();
   runSolve();
 })();
 </script>
