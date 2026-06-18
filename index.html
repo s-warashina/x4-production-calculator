@@ -58,8 +58,15 @@
   .btn-sm{padding:4px 9px;font-size:12px;}
   .btn-danger{color:var(--ember);border-color:#5a2a26;background:#1c1011;}
   .btn-danger:hover{border-color:var(--ember);background:#2a1413;}
-  .target-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;}
+  .target-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px;}
   .target-row .f{flex:1;min-width:140px;}
+  .target-row .t-remove{padding:8px 11px;}
+  .target-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
+  /* 目標追加 / 計算 ボタンは同サイズに揃える */
+  #addTargetBtn,#solveBtn{padding:9px 20px;font-size:14px;}
+  .tree-target + .tree-target{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);}
+  .tree-head{font-family:'Rajdhani';font-weight:700;font-size:16px;color:#eaf6fb;
+    margin-bottom:4px;display:flex;align-items:baseline;gap:8px;}
   /* stat cards */
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
   .stat{background:#0a1322;border:1px solid var(--line);border-radius:4px;padding:12px 14px;}
@@ -109,20 +116,13 @@
 <div class="head">
   <h1>X4 生産ソルバー</h1>
   <span class="v">v9.0</span>
-  <span class="sub">材料を再帰展開 ▸ 必要モジュール数と採掘/購入量を自動算出</span>
 </div>
 
 <div class="panel">
   <div class="eyebrow"><span class="num">01</span> 目標設定 / Target</div>
-  <div class="target-row">
-    <div class="f">
-      <label>生産ウェア</label>
-      <select id="targetWare" style="width:100%"></select>
-    </div>
-    <div class="f">
-      <label>モジュール数</label>
-      <input type="number" id="targetMods" value="1" min="0" step="1">
-    </div>
+  <div id="targetList"></div>
+  <div class="target-actions">
+    <button class="btn-sm" id="addTargetBtn">＋ 目標を追加</button>
     <button class="btn-go" id="solveBtn">▶ 計算</button>
   </div>
   <p class="hint" id="targetHint"></p>
@@ -150,8 +150,6 @@
     <div class="tscroll"><table id="modTable"></table></div>
   </div>
 </div>
-
-<div class="foot">レシピはコード内の SEED が唯一のソース ▸ 数値は要・実機/Encyclopedia照合</div>
 
 <script>
 //============ default seed (user's image data, Energy Cells deduplicated) ============
@@ -225,9 +223,10 @@ const SEED = {
 const DB = SEED;
 
 //============ solver: recursive BOM explosion + shared-input aggregation ============
-function solve(targetWare, targetRate){
+// targets: [{ware, rate}, ...] — 複数目標の需要を合算してから上流へ伝播する
+function solve(targets){
   const demand={}; const onPath=new Set(); let cycle=null;
-  (function add(ware,rate){
+  function add(ware,rate){
     demand[ware]=(demand[ware]||0)+rate;
     const rec=DB[ware]; if(!rec) return;
     if(onPath.has(ware)){cycle=ware;return;}
@@ -235,7 +234,8 @@ function solve(targetWare, targetRate){
     const mods=rate/rec.outputRate;
     rec.inputs.forEach(i=>add(i.ware, mods*i.rate));
     onPath.delete(ware);
-  })(targetWare,targetRate);
+  }
+  targets.forEach(t=>add(t.ware,t.rate));
 
   const produced=[], raw=[];
   Object.keys(demand).forEach(w=>{
@@ -263,11 +263,29 @@ const $=s=>document.querySelector(s);
 const fmt=n=>{ if(n>=100)return Math.round(n).toLocaleString();
   return (Math.round(n*10)/10).toLocaleString(undefined,{maximumFractionDigits:1}); };
 
-function refreshTargetSelect(){
-  const sel=$("#targetWare"); const cur=sel.value;
-  sel.innerHTML="";
+// 目標行を1つ生成して #targetList に追加する
+function addTargetRow(ware, mods){
+  const row=document.createElement("div");
+  row.className="target-row";
+  row.innerHTML=
+    `<div class="f"><label>生産ウェア</label><select class="t-ware" style="width:100%"></select></div>`+
+    `<div class="f"><label>モジュール数</label><input type="number" class="t-mods" value="${mods!=null?mods:1}" min="0" step="1"></div>`+
+    `<button class="btn-sm btn-danger t-remove" title="この目標を削除">✕</button>`;
+  const sel=row.querySelector(".t-ware");
   Object.keys(DB).forEach(w=>{ const o=document.createElement("option");o.value=w;o.textContent=w;sel.appendChild(o); });
-  if([...sel.options].some(o=>o.value===cur)) sel.value=cur;
+  if(ware && DB[ware]) sel.value=ware;
+  $("#targetList").appendChild(row);
+  return row;
+}
+
+// 現在の入力から有効な目標(モジュール数>0)の一覧を取得する
+function readTargets(){
+  return [...document.querySelectorAll("#targetList .target-row")].map(row=>{
+    const ware=row.querySelector(".t-ware").value;
+    const mods=parseFloat(row.querySelector(".t-mods").value)||0;
+    const rate=mods*(DB[ware]?DB[ware].outputRate:0);
+    return {ware,mods,rate};
+  }).filter(t=>t.ware && t.rate>0);
 }
 
 function renderTree(node){
@@ -285,21 +303,24 @@ function renderTree(node){
 }
 
 function runSolve(){
-  const ware=$("#targetWare").value;
-  if(!ware) return;
-  const mods=parseFloat($("#targetMods").value)||0;
-  const rate=mods*(DB[ware]?DB[ware].outputRate:0);
-  const res=solve(ware,rate);
+  const targets=readTargets();
+  if(!targets.length){ $("#results").style.display="none"; return; }
+  const res=solve(targets);
   $("#results").style.display="block";
 
   const totalMods=res.produced.reduce((s,p)=>s+p.mods,0);
+  const targetLabel = targets.length===1 ? targets[0].ware : `${targets.length} 種`;
+  const targetSub = targets.map(t=>`${t.ware}×${t.mods}`).join(" / ");
   $("#statCards").innerHTML=
-    card("目標", `${ware}`, "cyan", `${fmt(rate)} 個/h`)+
+    card("目標", targetLabel, "cyan", targetSub)+
     card("総生産モジュール", totalMods, "", `${res.produced.length} 種`)+
     card("採掘/購入材料", res.raw.length, "amber", "種類")+
     (res.cycle?card("⚠ 循環検出","",'amber',res.cycle):"");
 
-  $("#tree").innerHTML=renderTree(buildTree(ware,rate,0));
+  $("#tree").innerHTML=targets.map(t=>
+    `<div class="tree-target"><div class="tree-head">${t.ware}`+
+    `<span class="trate">×${t.mods} mod ▸ ${fmt(t.rate)}/h</span></div>`+
+    renderTree(buildTree(t.ware,t.rate,0))+`</div>`).join("");
 
   $("#rawTable").innerHTML=`<tr><th>材料</th><th class="r">必要量/h</th><th class="r">/秒</th></tr>`+
     (res.raw.length?res.raw.map(x=>
@@ -320,18 +341,28 @@ function card(k,val,cls,sub){
 }
 
 //============ wire up ============
+const targetList=$("#targetList");
 $("#solveBtn").onclick=runSolve;
-// 生産ウェアの選択、またはモジュール数に有効な数値が入ったら自動計算
-$("#targetWare").addEventListener("change", runSolve);
-$("#targetMods").addEventListener("input", ()=>{
-  const v=$("#targetMods").value;
-  if(v.trim()==="") return;          // 空欄は待機(計算しない)
-  if(!Number.isFinite(parseFloat(v))) return; // 無効値は無視
+$("#addTargetBtn").onclick=()=>{ addTargetRow(); runSolve(); };
+// 生産ウェアの選択、またはモジュール数に有効な数値が入ったら自動計算(行は動的なので委譲)
+targetList.addEventListener("change", e=>{
+  if(e.target.classList.contains("t-ware")) runSolve();
+});
+targetList.addEventListener("input", e=>{
+  if(!e.target.classList.contains("t-mods")) return;
+  const v=e.target.value;
+  if(v.trim()==="") return;                    // 空欄は待機(計算しない)
+  if(!Number.isFinite(parseFloat(v))) return;  // 無効値は無視
+  runSolve();
+});
+targetList.addEventListener("click", e=>{
+  if(!e.target.classList.contains("t-remove")) return;
+  e.target.closest(".target-row").remove();
   runSolve();
 });
 
 (function init(){
-  refreshTargetSelect();
+  addTargetRow();   // 初期表示に空の目標行を1つ
   runSolve();
 })();
 </script>
