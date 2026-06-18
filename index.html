@@ -58,9 +58,13 @@
   .btn-sm{padding:4px 9px;font-size:12px;}
   .btn-danger{color:var(--ember);border-color:#5a2a26;background:#1c1011;}
   .btn-danger:hover{border-color:var(--ember);background:#2a1413;}
-  .target-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:10px;}
-  .target-row .f{flex:1;min-width:140px;}
-  .target-row .t-remove{padding:8px 11px;}
+  .target-row{display:grid;gap:10px 12px;align-items:end;margin-bottom:10px;
+    grid-template-columns:1fr 130px auto;
+    grid-template-areas:"ware mods remove";}
+  .target-row .f{min-width:0;}
+  .target-row .f-ware{grid-area:ware;}
+  .target-row .f-mods{grid-area:mods;}
+  .target-row .t-remove{grid-area:remove;padding:8px 12px;align-self:end;}
   .target-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
   /* 目標追加 / 計算 ボタンは同サイズに揃える */
   #addTargetBtn,#solveBtn{padding:9px 20px;font-size:14px;}
@@ -111,6 +115,23 @@
   .toggle{cursor:pointer;color:var(--cyan);font-size:12px;letter-spacing:.08em;user-select:none;}
   .foot{color:var(--faint);font-size:11px;text-align:center;margin-top:8px;}
   .empty{color:var(--muted);font-style:italic;padding:8px 0;}
+  /* ---- mobile (iPhone 等) ---- */
+  @media(max-width:560px){
+    body{padding:12px;}
+    .head{gap:8px;padding-bottom:10px;margin-bottom:14px;}
+    .head h1{font-size:24px;}
+    .panel{padding:13px;margin-bottom:13px;}
+    /* 目標行: 折り返さず 1 行に収める。モジュール数列を詰めてウェア選択を伸縮させる */
+    .target-row{gap:8px;grid-template-columns:minmax(0,1fr) 88px auto;
+      grid-template-areas:"ware mods remove";}
+    .target-row .t-mods{padding:8px 6px;}
+    .target-row .t-remove{padding:8px 10px;min-width:42px;font-size:15px;}
+    .target-row label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .target-actions{justify-content:stretch;}
+    #addTargetBtn{flex:1;}
+    #solveBtn{flex:1;}
+    .stat .val{font-size:26px;}
+  }
 </style>
 
 <div class="head">
@@ -217,6 +238,16 @@ const SEED = {
     {ware:"メタン", rate:4800},
     {ware:"シリコン", rate:3600},
   ]},
+  "高度電子機器": { module:"高度電子機器の製造", outputRate:270, inputs:[
+    {ware:"エネルギーセル", rate:300},
+    {ware:"マイクロチップ", rate:220},
+    {ware:"量子チューブ", rate:100},
+  ]},
+  "高度化合物": { module:"高度化合物の製造", outputRate:648, inputs:[
+    {ware:"エネルギーセル", rate:600},
+    {ware:"グラフェン", rate:960},
+    {ware:"製錬金属", rate:960},
+  ]},
 };
 
 // SEED is the single source of truth. No persistence; recipes are edited in code.
@@ -268,9 +299,9 @@ function addTargetRow(ware, mods){
   const row=document.createElement("div");
   row.className="target-row";
   row.innerHTML=
-    `<div class="f"><label>生産ウェア</label><select class="t-ware" style="width:100%"></select></div>`+
-    `<div class="f"><label>モジュール数</label><input type="number" class="t-mods" value="${mods!=null?mods:1}" min="0" step="1"></div>`+
-    `<button class="btn-sm btn-danger t-remove" title="この目標を削除">✕</button>`;
+    `<div class="f f-ware"><label>生産ウェア</label><select class="t-ware" style="width:100%"></select></div>`+
+    `<div class="f f-mods"><label>モジュール数</label><input type="number" class="t-mods" value="${mods!=null?mods:1}" min="0" step="1"></div>`+
+    `<button class="btn-sm btn-danger t-remove" title="この目標を削除" aria-label="この目標を削除">✕</button>`;
   const sel=row.querySelector(".t-ware");
   Object.keys(DB).forEach(w=>{ const o=document.createElement("option");o.value=w;o.textContent=w;sel.appendChild(o); });
   if(ware && DB[ware]) sel.value=ware;
