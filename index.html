@@ -172,6 +172,9 @@
         <input id="newName" placeholder="生産ウェア名 (例: マイクロチップ)">
         <input id="newOut" type="number" placeholder="生産/h" min="0">
       </div>
+      <div class="inrow" style="grid-template-columns:1fr;margin-bottom:10px">
+        <input id="newModule" placeholder="生産モジュール名 (任意 / 例: マイクロチップ生産)">
+      </div>
       <label style="margin-top:4px">投入材料 (ウェア名 / 消費 per h)</label>
       <div id="newInputs"></div>
       <div style="display:flex;gap:8px;margin-top:8px">
@@ -188,11 +191,36 @@
 <script>
 //============ default seed (user's image data, Energy Cells deduplicated) ============
 const SEED = {
-  "クレイトロニクス": { outputRate:108, inputs:[
+  "クレイトロニクス": { module:"クレイトロニクスの製造", outputRate:108, inputs:[
     {ware:"エネルギーセル", rate:560},
     {ware:"反物質セル",     rate:400},
     {ware:"マイクロチップ", rate:640},
     {ware:"量子チューブ",   rate:400},
+  ]},
+  "グラフェン": { module:"グラフェンの製造", outputRate:1440, inputs:[
+    {ware:"エネルギーセル", rate:1200},
+    {ware:"メタン",     rate:4800},
+  ]},
+  "シリコンウェハー": { module:"シリコンウェハーの製造", outputRate:2140, inputs:[
+    {ware:"エネルギーセル", rate:1800},
+    {ware:"シリコン",     rate:4800},
+  ]},
+  "マイクロチップ": { module:"マイクロチップの製造", outputRate:320, inputs:[
+    {ware:"エネルギーセル", rate:300},
+    {ware:"シリコンウェハー",     rate:1200},
+  ]},
+  "量子チューブ": { module:"量子チューブの製造", outputRate:470, inputs:[
+    {ware:"エネルギーセル", rate:200},
+    {ware:"グラフェン",     rate:580},
+    {ware:"超流動冷媒",     rate:150},
+  ]},
+  "反物質セル": { module:"反物質セルの製造", outputRate:2970, inputs:[
+    {ware:"エネルギーセル", rate:3000},
+    {ware:"水素",     rate:9600},
+  ]},
+  "超流動冷媒": { module:"超流動冷媒の製造", outputRate:1425, inputs:[
+    {ware:"エネルギーセル", rate:900},
+    {ware:"ヘリウム",     rate:4800},
   ]},
 };
 
@@ -235,7 +263,7 @@ function solve(targetWare, targetRate){
   Object.keys(demand).forEach(w=>{
     const rec=DB[w];
     if(rec){ const ex=demand[w]/rec.outputRate;
-      produced.push({ware:w,rate:demand[w],out:rec.outputRate,modsExact:ex,mods:Math.ceil(ex)});
+      produced.push({ware:w,module:rec.module||w,rate:demand[w],out:rec.outputRate,modsExact:ex,mods:Math.ceil(ex)});
     } else raw.push({ware:w,rate:demand[w]});
   });
   produced.sort((a,b)=>b.rate-a.rate); raw.sort((a,b)=>b.rate-a.rate);
@@ -302,9 +330,9 @@ function runSolve(){
       `<td class="r num muted">${fmt(x.rate/3600)}</td></tr>`).join("")
      :`<tr><td colspan="3" class="empty">なし</td></tr>`);
 
-  $("#modTable").innerHTML=`<tr><th>生産ウェア</th><th class="r">必要量/h</th><th class="r">1基あたり/h</th><th class="r">モジュール (実数)</th><th class="r">必要基数</th></tr>`+
+  $("#modTable").innerHTML=`<tr><th>生産ウェア</th><th>生産モジュール</th><th class="r">必要量/h</th><th class="r">1基あたり/h</th><th class="r">モジュール (実数)</th><th class="r">必要基数</th></tr>`+
     res.produced.map(p=>
-      `<tr><td class="cyan">${p.ware}</td><td class="r num">${fmt(p.rate)}</td>`+
+      `<tr><td class="cyan">${p.ware}</td><td class="muted">${p.module}</td><td class="r num">${fmt(p.rate)}</td>`+
       `<td class="r num muted">${fmt(p.out)}</td>`+
       `<td class="r num muted">${p.modsExact.toFixed(2)}</td>`+
       `<td class="r num" style="color:var(--cyan);font-weight:600">${p.mods}</td></tr>`).join("");
@@ -324,6 +352,7 @@ function renderRecipeList(){
     const r=DB[w];
     return `<div class="rcard"><div class="top">`+
       `<span class="rname">${w}</span>`+
+      (r.module?`<span class="rout muted">▸ ${r.module}</span>`:"")+
       `<span class="rout">生産 ${fmt(r.outputRate)}/h</span>`+
       `<button class="btn-sm btn-danger" style="margin-left:auto" data-del="${w}">削除</button></div>`+
       `<table style="margin-top:2px"><tr><th>投入材料</th><th class="r">消費/h</th></tr>`+
@@ -344,6 +373,7 @@ function addInputRow(name="",rate=""){
 }
 function saveNewRecipe(){
   const name=$("#newName").value.trim();
+  const module=$("#newModule").value.trim();
   const out=parseFloat($("#newOut").value);
   if(!name){alert("生産ウェア名を入力してください");return;}
   if(!out||out<=0){alert("生産/h を入力してください");return;}
@@ -354,8 +384,9 @@ function saveNewRecipe(){
     if(w&&rt>0) inputs.push({ware:w,rate:rt});
   });
   DB[name]={outputRate:out,inputs};
+  if(module) DB[name].module=module;
   saveDB(); renderRecipeList(); refreshTargetSelect();
-  $("#newName").value="";$("#newOut").value="";$("#newInputs").innerHTML="";addInputRow();
+  $("#newName").value="";$("#newModule").value="";$("#newOut").value="";$("#newInputs").innerHTML="";addInputRow();
 }
 
 //============ wire up ============
