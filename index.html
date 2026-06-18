@@ -60,10 +60,6 @@
   .btn-danger:hover{border-color:var(--ember);background:#2a1413;}
   .target-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;}
   .target-row .f{flex:1;min-width:140px;}
-  .mode{display:flex;gap:0;border:1px solid var(--line);border-radius:3px;overflow:hidden;}
-  .mode button{border:none;border-radius:0;background:#0a1322;color:var(--muted);
-    padding:8px 12px;font-size:12px;}
-  .mode button.on{background:var(--cyan-dim);color:#04141a;}
   /* stat cards */
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
   .stat{background:#0a1322;border:1px solid var(--line);border-radius:4px;padding:12px 14px;}
@@ -124,15 +120,8 @@
       <select id="targetWare" style="width:100%"></select>
     </div>
     <div class="f">
-      <label id="amtLabel">目標生産量 (個/h)</label>
-      <input type="number" id="targetAmt" value="108" min="0" step="1">
-    </div>
-    <div>
-      <label>入力モード</label>
-      <div class="mode">
-        <button id="mRate" class="on">個/h</button>
-        <button id="mMod">モジュール数</button>
-      </div>
+      <label>モジュール数</label>
+      <input type="number" id="targetMods" value="1" min="0" step="1">
     </div>
     <button class="btn-go" id="solveBtn">▶ 計算</button>
   </div>
@@ -167,6 +156,8 @@
 <script>
 //============ default seed (user's image data, Energy Cells deduplicated) ============
 const SEED = {
+  "エネルギーセル": { module:"エネルギーセルの製造", outputRate:10500, inputs:[
+  ]},
   "クレイトロニクス": { module:"クレイトロニクスの製造", outputRate:108, inputs:[
     {ware:"エネルギーセル", rate:560},
     {ware:"反物質セル",     rate:400},
@@ -176,6 +167,10 @@ const SEED = {
   "グラフェン": { module:"グラフェンの製造", outputRate:1440, inputs:[
     {ware:"エネルギーセル", rate:1200},
     {ware:"メタン",     rate:4800},
+  ]},
+  "製錬金属": { module:"製錬金属の製造", outputRate:2112, inputs:[
+    {ware:"エネルギーセル", rate:2160},
+    {ware:"鉱石",     rate:5760},
   ]},
   "シリコンウェハー": { module:"シリコンウェハーの製造", outputRate:2140, inputs:[
     {ware:"エネルギーセル", rate:1800},
@@ -194,9 +189,35 @@ const SEED = {
     {ware:"エネルギーセル", rate:3000},
     {ware:"水素",     rate:9600},
   ]},
+  "水": { module:"水の製造", outputRate:5790, inputs:[
+    {ware:"エネルギーセル", rate:1800},
+    {ware:"氷",     rate:9600},
+  ]},
   "超流動冷媒": { module:"超流動冷媒の製造", outputRate:1425, inputs:[
     {ware:"エネルギーセル", rate:900},
     {ware:"ヘリウム",     rate:4800},
+  ]},
+  "プラズマ伝導体": { module:"プラズマ伝導体の製造", outputRate:176, inputs:[
+    {ware:"エネルギーセル", rate:240},
+    {ware:"グラフェン",     rate:384},
+    {ware:"超流動冷媒",     rate:560},
+  ]},
+  "コンピュートロニック基材": { module:"コンピュートロニック基材の製造", outputRate:588, inputs:[
+    {ware:"エネルギーセル", rate:24000},
+    {ware:"水素", rate:12000},
+    {ware:"鉱石", rate:18000},
+    {ware:"シリコン", rate:18000},
+  ]},
+  "マイクロラティス": { module:"マイクロラティスの製造", outputRate:3800, inputs:[
+    {ware:"エネルギーセル", rate:1000},
+    {ware:"ヘリウム", rate:2600},
+    {ware:"鉱石", rate:1000},
+  ]},
+  "炭化ケイ素": { module:"炭化ケイ素の製造", outputRate:576, inputs:[
+    {ware:"エネルギーセル", rate:2400},
+    {ware:"マイクロラティス", rate:24},
+    {ware:"メタン", rate:4800},
+    {ware:"シリコン", rate:3600},
   ]},
 };
 
@@ -242,7 +263,6 @@ const $=s=>document.querySelector(s);
 const fmt=n=>{ if(n>=100)return Math.round(n).toLocaleString();
   return (Math.round(n*10)/10).toLocaleString(undefined,{maximumFractionDigits:1}); };
 
-let mode="rate";
 function refreshTargetSelect(){
   const sel=$("#targetWare"); const cur=sel.value;
   sel.innerHTML="";
@@ -267,8 +287,8 @@ function renderTree(node){
 function runSolve(){
   const ware=$("#targetWare").value;
   if(!ware) return;
-  let rate=parseFloat($("#targetAmt").value)||0;
-  if(mode==="mod"){ rate=rate*(DB[ware]?DB[ware].outputRate:0); }
+  const mods=parseFloat($("#targetMods").value)||0;
+  const rate=mods*(DB[ware]?DB[ware].outputRate:0);
   const res=solve(ware,rate);
   $("#results").style.display="block";
 
@@ -287,12 +307,11 @@ function runSolve(){
       `<td class="r num muted">${fmt(x.rate/3600)}</td></tr>`).join("")
      :`<tr><td colspan="3" class="empty">なし</td></tr>`);
 
-  $("#modTable").innerHTML=`<tr><th>生産ウェア</th><th>生産モジュール</th><th class="r">必要量/h</th><th class="r">1基あたり/h</th><th class="r">モジュール (実数)</th><th class="r">必要基数</th></tr>`+
+  $("#modTable").innerHTML=`<tr><th>生産モジュール</th><th class="r">必要量/h</th><th class="r">1基あたり/h</th><th class="r">必要基数 (実数)</th></tr>`+
     res.produced.map(p=>
-      `<tr><td class="cyan">${p.ware}</td><td class="muted">${p.module}</td><td class="r num">${fmt(p.rate)}</td>`+
+      `<tr><td class="cyan">${p.module}</td><td class="r num">${fmt(p.rate)}</td>`+
       `<td class="r num muted">${fmt(p.out)}</td>`+
-      `<td class="r num muted">${p.modsExact.toFixed(2)}</td>`+
-      `<td class="r num" style="color:var(--cyan);font-weight:600">${p.mods}</td></tr>`).join("");
+      `<td class="r num" style="color:var(--cyan);font-weight:600">${p.modsExact.toFixed(2)}</td></tr>`).join("");
 }
 function card(k,val,cls,sub){
   return `<div class="stat"><div class="k">${k}</div>`+
@@ -302,10 +321,14 @@ function card(k,val,cls,sub){
 
 //============ wire up ============
 $("#solveBtn").onclick=runSolve;
-$("#mRate").onclick=()=>{mode="rate";$("#mRate").classList.add("on");$("#mMod").classList.remove("on");
-  $("#amtLabel").textContent="目標生産量 (個/h)";};
-$("#mMod").onclick=()=>{mode="mod";$("#mMod").classList.add("on");$("#mRate").classList.remove("on");
-  $("#amtLabel").textContent="モジュール基数";};
+// 生産ウェアの選択、またはモジュール数に有効な数値が入ったら自動計算
+$("#targetWare").addEventListener("change", runSolve);
+$("#targetMods").addEventListener("input", ()=>{
+  const v=$("#targetMods").value;
+  if(v.trim()==="") return;          // 空欄は待機(計算しない)
+  if(!Number.isFinite(parseFloat(v))) return; // 無効値は無視
+  runSolve();
+});
 
 (function init(){
   refreshTargetSelect();
