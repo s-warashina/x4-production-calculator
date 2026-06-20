@@ -240,6 +240,11 @@ const SEED = {
     {ware:"エネルギーセル", rate:1800},
     {ware:"シリコン",     rate:4800},
   ]},
+  "船体部品": { module:"船体部品の製造", outputRate:1176, inputs:[
+    {ware:"エネルギーセル", rate:320},
+    {ware:"グラフェン",     rate:160},
+    {ware:"製錬金属",     rate:1120},
+  ]},
   "マイクロチップ": { module:"マイクロチップの製造", outputRate:320, inputs:[
     {ware:"エネルギーセル", rate:300},
     {ware:"シリコンウェハー",     rate:1200},
@@ -256,6 +261,24 @@ const SEED = {
   "水": { module:"水の製造", outputRate:5790, inputs:[
     {ware:"エネルギーセル", rate:1800},
     {ware:"氷",     rate:9600},
+  ]},
+  "ボーガス": { module:"ボーガスの製造", outputRate:110, inputs:[
+    {ware:"エネルギーセル", rate:40},
+    {ware:"水",     rate:100},
+  ]},
+  "プランクトン": { module:"プランクトンの製造", outputRate:275, inputs:[
+    {ware:"エネルギーセル", rate:20},
+    {ware:"水",     rate:50},
+  ]},
+  "ボウフ": { module:"ボウフの製造", outputRate:82, inputs:[
+    {ware:"エネルギーセル", rate:40},
+    {ware:"ボーガス",     rate:40},
+    {ware:"プランクトン",     rate:120},
+  ]},
+  "ボロン医療品": { module:"ボロン医療品の製造", outputRate:208, inputs:[
+    {ware:"エネルギーセル", rate:100},
+    {ware:"水",     rate:60},
+    {ware:"プランクトン",     rate:95},
   ]},
   "超流動冷媒": { module:"超流動冷媒の製造", outputRate:1425, inputs:[
     {ware:"エネルギーセル", rate:900},
@@ -287,6 +310,41 @@ const SEED = {
     {ware:"エネルギーセル", rate:300},
     {ware:"マイクロチップ", rate:220},
     {ware:"量子チューブ", rate:100},
+  ]},
+  "フィールドコイル": { module:"フィールドコイルの製造", outputRate:1050, inputs:[
+    {ware:"エネルギーセル", rate:360},
+    {ware:"プラズマ伝導体", rate:240},
+    {ware:"量子チューブ", rate:258},
+  ]},
+  "武器部品": { module:"武器部品の製造", outputRate:340, inputs:[
+    {ware:"エネルギーセル", rate:120},
+    {ware:"船体部品", rate:40},
+    {ware:"プラズマ伝導体", rate:60},
+  ]},
+  "タレット部品": { module:"タレット部品の製造", outputRate:340, inputs:[
+    {ware:"エネルギーセル", rate:120},
+    {ware:"マイクロチップ", rate:40},
+    {ware:"量子チューブ", rate:40},
+    {ware:"スキャンアレイ", rate:20},
+  ]},
+  "ミサイル部品": { module:"ミサイル部品", outputRate:1124, inputs:[
+    {ware:"エネルギーセル", rate:80},
+    {ware:"船体部品", rate:8},
+    {ware:"高度化合物", rate:8},
+  ]},
+  "エンジン部品": { module:"エンジン部品の製造", outputRate:832, inputs:[
+    {ware:"エネルギーセル", rate:240},
+    {ware:"反物質セル", rate:320},
+    {ware:"製錬金属", rate:384},
+  ]},
+  "スキャンアレイ": { module:"スキャンアレイの製造", outputRate:216, inputs:[
+    {ware:"エネルギーセル", rate:360},
+    {ware:"製錬金属", rate:600},
+    {ware:"シリコンウェハー", rate:360},
+  ]},
+  "スマートチップ": { module:"スマートチップの製造", outputRate:858, inputs:[
+    {ware:"エネルギーセル", rate:300},
+    {ware:"シリコンウェハー", rate:120},
   ]},
   "高度化合物": { module:"高度化合物の製造", outputRate:648, inputs:[
     {ware:"エネルギーセル", rate:600},
