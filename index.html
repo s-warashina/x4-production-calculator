@@ -75,7 +75,7 @@
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
   .stat{background:#0a1322;border:1px solid var(--line);border-radius:4px;padding:12px 14px;}
   .stat .k{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
-  .stat .val{font-family:'Rajdhani';font-size:30px;font-weight:700;line-height:1.1;color:#eaf6fb;}
+  .stat .val{font-family:'Rajdhani';font-size:20px;font-weight:700;line-height:1.1;color:#eaf6fb;}
   .stat .val.amber{color:var(--amber);} .stat .val.cyan{color:var(--cyan);}
   /* tree */
   .tree{font-size:13px;margin-top:4px;}
@@ -171,6 +171,10 @@
     #addTargetBtn{flex:1;}
     #solveBtn{flex:1;}
     .stat .val{font-size:26px;}
+    /* 収益性テーブル: フォントを小さくし、ウェア列が潰れないよう折り返しを抑止 */
+    #ecoTable{font-size:11px;}
+    #ecoTable th,#ecoTable td{padding:5px 6px;}
+    #ecoTable td.cyan{white-space:nowrap;}
   }
 </style>
 
