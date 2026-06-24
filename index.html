@@ -212,6 +212,7 @@
 
   <div class="panel">
     <div class="eyebrow"><span class="num">05</span> 必要生産モジュール</div>
+    <p class="hint">建設費用は必要基数の切り上げ × 1基あたり建設素材 × 単価(価格記載分のみ)。一部素材が未記載のモジュールは概算で「*」を付す。</p>
     <div class="tscroll"><table id="modTable"></table></div>
   </div>
 
@@ -665,11 +666,23 @@ function runSolve(){
       `<td class="r num" style="color:var(--amber);font-weight:700">${fmt(rawCost)}</td></tr>`
      :`<tr><td colspan="4" class="empty">なし</td></tr>`);
 
-  $("#modTable").innerHTML=`<tr><th>生産モジュール</th><th class="r">必要量/h</th><th class="r">1基あたり/h</th><th class="r">必要基数 (実数)</th></tr>`+
-    res.produced.map(p=>
-      `<tr><td class="cyan">${p.module}</td><td class="r num">${fmt(p.rate)}</td>`+
-      `<td class="r num muted">${fmt(p.out)}</td>`+
-      `<td class="r num" style="color:var(--cyan);font-weight:600">${p.modsExact.toFixed(2)}</td></tr>`).join("");
+  // 各生産モジュールの建設費用 = 必要基数(切り上げ mods) × 1基あたり建設素材 × 単価 (価格記載分のみ)。
+  // 全モジュールの合算は上の buildCost と一致する。
+  $("#modTable").innerHTML=`<tr><th>生産モジュール</th><th class="r">必要量/h</th><th class="r">1基あたり/h</th><th class="r">必要基数 (実数)</th><th class="r">建設費用 (Cr)</th></tr>`+
+    res.produced.map(p=>{
+      const bp=DB[p.ware].build.filter(b=>DB[b.ware]&&DB[b.ware].avgPrice!=null);
+      const allPriced=DB[p.ware].build.length>0 && bp.length===DB[p.ware].build.length;
+      const cost=bp.reduce((s,b)=>s+b.amount*p.mods*DB[b.ware].avgPrice, 0);
+      const costCell=DB[p.ware].build.length
+        ? `${fmt(cost)}${allPriced?"":" *"}`
+        : "—";
+      return `<tr><td class="cyan">${p.module}</td><td class="r num">${fmt(p.rate)}</td>`+
+        `<td class="r num muted">${fmt(p.out)}</td>`+
+        `<td class="r num" style="color:var(--cyan);font-weight:600">${p.modsExact.toFixed(2)}</td>`+
+        `<td class="r num" style="color:var(--amber);font-weight:600">${costCell}</td></tr>`;
+    }).join("")+
+    `<tr><td class="muted" colspan="4">合計建設費用 (価格記載分)</td>`+
+    `<td class="r num" style="color:var(--amber);font-weight:700">${fmt(buildCost)}</td></tr>`;
 
   // 建設素材テーブル (集計は上のサマリー計算で済んでいる buildTotals / buildRows / buildCost を再利用)
   $("#buildTable").innerHTML=`<tr><th>建設素材</th><th class="r">必要総量</th><th class="r">単価 (Cr)</th><th class="r">費用 (Cr)</th></tr>`+
