@@ -96,10 +96,13 @@
     text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding:7px 8px;}
   td{padding:7px 8px;border-bottom:1px solid #131f33;}
   td.r,th.r{text-align:right;}
+  th.sortable{cursor:pointer;user-select:none;white-space:nowrap;}
+  th.sortable:hover{color:var(--cyan);}
   tr:hover td{background:#0c1626;}
   .num{font-variant-numeric:tabular-nums;}
   .tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
   #modTable{min-width:440px;}
+  #ecoTable{min-width:560px;}
   .amber{color:var(--amber);} .cyan{color:var(--cyan-soft);} .muted{color:var(--muted);}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   @media(max-width:720px){.grid2{grid-template-columns:1fr;}}
@@ -217,51 +220,62 @@
   <div class="flow-wrap"><div class="flow" id="flow"></div></div>
 </div>
 
+<div class="panel">
+  <div class="eyebrow"><span class="num">07</span> 収益性 / Economics</div>
+  <p class="hint">SEED に avgPrice / volume を記載した全ウェアを表示(目標とは独立)。生産量/h・価値/h は 1 基(outputRate)あたり。体積あたり価値 = 平均価格 ÷ 体積。列見出しクリックで昇順 / 降順ソート。</p>
+  <div class="tscroll"><table id="ecoTable"></table></div>
+</div>
+
 <script>
 //============ default seed (user's image data, Energy Cells deduplicated) ============
 const SEED = {
   "エネルギーセル": { module:"エネルギーセルの製造", outputRate:10500, inputs:[
-  ]},
+  ], avgPrice: 16, volume: 1},
   "クレイトロニクス": { module:"クレイトロニクスの製造", outputRate:108, inputs:[
     {ware:"エネルギーセル", rate:560},
     {ware:"反物質セル",     rate:400},
     {ware:"マイクロチップ", rate:640},
     {ware:"量子チューブ",   rate:400},
-  ]},
+  ], avgPrice: 2040, volume: 24},
   "グラフェン": { module:"グラフェンの製造", outputRate:1440, inputs:[
     {ware:"エネルギーセル", rate:1200},
     {ware:"メタン",     rate:4800},
-  ]},
+  ], avgPrice: 166, volume: 20},
   "製錬金属": { module:"製錬金属の製造", outputRate:2112, inputs:[
     {ware:"エネルギーセル", rate:2160},
     {ware:"鉱石",     rate:5760},
-  ]},
+  ], avgPrice: 148, volume: 14},
   "シリコンウェハー": { module:"シリコンウェハーの製造", outputRate:2140, inputs:[
     {ware:"エネルギーセル", rate:1800},
     {ware:"シリコン",     rate:4800},
-  ]},
+  ], avgPrice: 299, volume: 18},
   "船体部品": { module:"船体部品の製造", outputRate:1176, inputs:[
     {ware:"エネルギーセル", rate:320},
     {ware:"グラフェン",     rate:160},
     {ware:"製錬金属",     rate:1120},
-  ]},
+  ], avgPrice: 209, volume: 12},
   "マイクロチップ": { module:"マイクロチップの製造", outputRate:320, inputs:[
     {ware:"エネルギーセル", rate:300},
     {ware:"シリコンウェハー",     rate:1200},
-  ]},
+  ], avgPrice: 948, volume: 22},
   "量子チューブ": { module:"量子チューブの製造", outputRate:470, inputs:[
     {ware:"エネルギーセル", rate:200},
     {ware:"グラフェン",     rate:580},
     {ware:"超流動冷媒",     rate:150},
-  ]},
+  ], avgPrice: 300, volume: 22},
   "反物質セル": { module:"反物質セルの製造", outputRate:2970, inputs:[
     {ware:"エネルギーセル", rate:3000},
     {ware:"水素",     rate:9600},
-  ]},
+  ], avgPrice: 202, volume: 18},
+  "反物質コンバーター": { module:"反物質コンバーターの製造", outputRate:1596, inputs:[
+    {ware:"エネルギーセル", rate:960},
+    {ware:"高度化合物",     rate:240},
+    {ware:"マイクロチップ",     rate:360},
+  ], avgPrice: 354, volume: 10},
   "水": { module:"水の製造", outputRate:5790, inputs:[
     {ware:"エネルギーセル", rate:1800},
     {ware:"氷",     rate:9600},
-  ]},
+  ], avgPrice: 53, volume: 6},
   "ボーガス": { module:"ボーガスの製造", outputRate:110, inputs:[
     {ware:"エネルギーセル", rate:40},
     {ware:"水",     rate:100},
@@ -274,27 +288,27 @@ const SEED = {
     {ware:"エネルギーセル", rate:40},
     {ware:"ボーガス",     rate:40},
     {ware:"プランクトン",     rate:120},
-  ]},
+  ], avgPrice: 101, volume: 4},
   "ボロン医療品": { module:"ボロン医療品の製造", outputRate:208, inputs:[
     {ware:"エネルギーセル", rate:100},
     {ware:"水",     rate:60},
     {ware:"プランクトン",     rate:95},
-  ]},
+  ], avgPrice: 66, volume: 2},
   "超流動冷媒": { module:"超流動冷媒の製造", outputRate:1425, inputs:[
     {ware:"エネルギーセル", rate:900},
     {ware:"ヘリウム",     rate:4800},
-  ]},
+  ], avgPrice: 150, volume: 16},
   "プラズマ伝導体": { module:"プラズマ伝導体の製造", outputRate:176, inputs:[
     {ware:"エネルギーセル", rate:240},
     {ware:"グラフェン",     rate:384},
     {ware:"超流動冷媒",     rate:560},
-  ]},
+  ], avgPrice: 1026, volume: 32},
   "コンピュートロニック基材": { module:"コンピュートロニック基材の製造", outputRate:588, inputs:[
     {ware:"エネルギーセル", rate:24000},
     {ware:"水素", rate:12000},
     {ware:"鉱石", rate:18000},
     {ware:"シリコン", rate:18000},
-  ]},
+  ], avgPrice: 8280, volume: 50},
   "マイクロラティス": { module:"マイクロラティスの製造", outputRate:3800, inputs:[
     {ware:"エネルギーセル", rate:1000},
     {ware:"ヘリウム", rate:2600},
@@ -305,28 +319,28 @@ const SEED = {
     {ware:"マイクロラティス", rate:24},
     {ware:"メタン", rate:4800},
     {ware:"シリコン", rate:3600},
-  ]},
+  ], avgPrice: 1414, volume: 20},
   "高度電子機器": { module:"高度電子機器の製造", outputRate:270, inputs:[
     {ware:"エネルギーセル", rate:300},
     {ware:"マイクロチップ", rate:220},
     {ware:"量子チューブ", rate:100},
-  ]},
+  ], avgPrice: 1014, volume: 30},
   "フィールドコイル": { module:"フィールドコイルの製造", outputRate:1050, inputs:[
     {ware:"エネルギーセル", rate:360},
     {ware:"プラズマ伝導体", rate:240},
     {ware:"量子チューブ", rate:258},
-  ]},
+  ], avgPrice: 412, volume: 15},
   "武器部品": { module:"武器部品の製造", outputRate:340, inputs:[
     {ware:"エネルギーセル", rate:120},
     {ware:"船体部品", rate:40},
     {ware:"プラズマ伝導体", rate:60},
-  ]},
+  ], avgPrice: 285, volume: 20},
   "タレット部品": { module:"タレット部品の製造", outputRate:340, inputs:[
     {ware:"エネルギーセル", rate:120},
     {ware:"マイクロチップ", rate:40},
     {ware:"量子チューブ", rate:40},
     {ware:"スキャンアレイ", rate:20},
-  ]},
+  ], avgPrice: 273, volume: 20},
   "ミサイル部品": { module:"ミサイル部品", outputRate:1124, inputs:[
     {ware:"エネルギーセル", rate:80},
     {ware:"船体部品", rate:8},
@@ -336,21 +350,21 @@ const SEED = {
     {ware:"エネルギーセル", rate:240},
     {ware:"反物質セル", rate:320},
     {ware:"製錬金属", rate:384},
-  ]},
+  ], avgPrice: 182, volume:15},
   "スキャンアレイ": { module:"スキャンアレイの製造", outputRate:216, inputs:[
     {ware:"エネルギーセル", rate:360},
     {ware:"製錬金属", rate:600},
     {ware:"シリコンウェハー", rate:360},
-  ]},
+  ], avgPrice: 1053, volume: 38},
   "スマートチップ": { module:"スマートチップの製造", outputRate:858, inputs:[
     {ware:"エネルギーセル", rate:300},
     {ware:"シリコンウェハー", rate:120},
-  ]},
+  ], avgPrice: 57, volume: 2},
   "高度化合物": { module:"高度化合物の製造", outputRate:648, inputs:[
     {ware:"エネルギーセル", rate:600},
     {ware:"グラフェン", rate:960},
     {ware:"製錬金属", rate:960},
-  ]},
+  ], avgPrice: 540, volume: 32},
 };
 
 // SEED is the single source of truth. No persistence; recipes are edited in code.
@@ -445,8 +459,17 @@ function runSolve(){
   const totalMods=res.produced.reduce((s,p)=>s+p.mods,0);
   const targetLabel = targets.length===1 ? targets[0].ware : `${targets.length} 種`;
   const targetSub = targets.map(t=>`${t.ware}×${t.mods}`).join(" / ");
+
+  // 売上/h = 目標ウェアを全量売却した場合の収入 (avgPrice 記載分のみ)
+  const pricedTargets = targets.filter(t=>{const r=DB[t.ware]; return r && r.avgPrice!=null;});
+  const targetIncome = pricedTargets.reduce((s,t)=>s + t.rate*DB[t.ware].avgPrice, 0);
+  const incomeSub = pricedTargets.length
+    ? `${pricedTargets.length}/${targets.length} 種が価格記載`
+    : "価格データなし";
+
   $("#statCards").innerHTML=
     card("目標", targetLabel, "cyan", targetSub)+
+    card("売上 / h", `${fmt(targetIncome)} Cr`, "cyan", incomeSub)+
     card("総生産モジュール", totalMods, "", `${res.produced.length} 種`)+
     card("採掘/購入材料", res.raw.length, "amber", "種類")+
     (res.cycle?card("⚠ 循環検出","",'amber',res.cycle):"");
@@ -473,6 +496,50 @@ function card(k,val,cls,sub){
     `<div class="val ${cls||''}">${val}</div>`+
     (sub?`<div class="k" style="margin-top:2px">${sub}</div>`:"")+`</div>`;
 }
+
+//============ 収益性テーブル: SEED で avgPrice/volume 両方を記載した全ウェア (目標と独立・列ソート可) ============
+const ECO_ROWS = Object.keys(DB)
+  .filter(w=>DB[w].avgPrice!=null && DB[w].volume!=null)
+  .map(w=>{const r=DB[w];
+    return {ware:w, price:r.avgPrice, vol:r.volume, valPerVol:r.avgPrice/r.volume,
+            rate:r.outputRate, income:r.outputRate*r.avgPrice};});
+const ECO_COLS=[
+  {key:"ware",      label:"ウェア",                num:false},
+  {key:"price",     label:"平均価格 (Cr)",         num:true},
+  {key:"vol",       label:"体積 (m³)",             num:true},
+  {key:"valPerVol", label:"体積あたり価値 (Cr/m³)", num:true},
+  {key:"rate",      label:"生産量/h",              num:true},
+  {key:"income",    label:"価値/h (Cr)",           num:true},
+];
+let ecoSort={key:"valPerVol", dir:-1};   // 既定: 体積あたり価値の降順
+function renderEco(){
+  const rows=[...ECO_ROWS].sort((a,b)=>{
+    const k=ecoSort.key;
+    const v = (typeof a[k]==="string") ? a[k].localeCompare(b[k],"ja") : a[k]-b[k];
+    return v*ecoSort.dir;
+  });
+  const head=ECO_COLS.map(c=>{
+    const arrow = ecoSort.key===c.key ? (ecoSort.dir<0?" ▼":" ▲") : "";
+    return `<th class="${c.num?'r ':''}sortable" data-key="${c.key}">${c.label}${arrow}</th>`;
+  }).join("");
+  const body = ECO_ROWS.length ? rows.map(e=>
+    `<tr><td class="cyan">${e.ware}</td>`+
+    `<td class="r num">${fmt(e.price)}</td>`+
+    `<td class="r num muted">${fmt(e.vol)}</td>`+
+    `<td class="r num" style="color:var(--amber);font-weight:600">${fmt(e.valPerVol)}</td>`+
+    `<td class="r num muted">${fmt(e.rate)}</td>`+
+    `<td class="r num" style="color:var(--cyan);font-weight:600">${fmt(e.income)}</td></tr>`).join("")
+   : `<tr><td colspan="6" class="empty">価格・体積が記載されたウェアなし</td></tr>`;
+  $("#ecoTable").innerHTML=`<tr>${head}</tr>`+body;
+}
+// 見出しクリックでソート (同列は方向トグル / 別列は数値=降順・文字=昇順から)
+$("#ecoTable").addEventListener("click", ev=>{
+  const th=ev.target.closest("th.sortable"); if(!th) return;
+  const key=th.dataset.key;
+  if(ecoSort.key===key) ecoSort.dir*=-1;
+  else ecoSort={key, dir: key==="ware"?1:-1};
+  renderEco();
+});
 
 //============ flow graph: 全レシピの依存関係を左→右の層状 DAG で描画 ============
 // 層 (列) = 原材料からの最長経路深さ。RAW と入力ゼロのモジュール(エネルギーセル)は深さ0=左端。
@@ -685,5 +752,6 @@ targetList.addEventListener("click", e=>{
   addTargetRow();   // 初期表示に空の目標行を1つ
   runSolve();
   renderFlow();     // 全ウェアの依存関係マップ (常時表示)
+  renderEco();      // 収益性テーブル (SEED 全価格ウェア・常時表示)
 })();
 </script>
