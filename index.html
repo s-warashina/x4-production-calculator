@@ -514,6 +514,60 @@
         { ware: "船体部品", amount: 2373 },
       ], avgPrice: 540, volume: 32
     },
+    "小麦": {
+      module: "小麦の製造", outputRate: 3720, inputs: [
+        { ware: "エネルギーセル", rate: 720 },
+        { ware: "水", rate: 960 },
+      ], build:[
+        { ware: "クレイトロニクス", amount: 296 },
+        { ware: "エネルギーセル", amount: 592 },
+        { ware: "船体部品", amount: 1084 },
+      ], avgPrice: 31, volume: 4
+    },
+    "糧食": {
+      module: "糧食の製造", outputRate: 6900, inputs: [
+        { ware: "エネルギーセル", rate: 1500 },
+        { ware: "食肉", rate: 600 },
+        { ware: "香辛料", rate: 600 },
+        { ware: "小麦", rate: 600 },
+      ], build:[
+        { ware: "クレイトロニクス", amount: 262 },
+        { ware: "エネルギーセル", amount: 525 },
+        { ware: "船体部品", amount: 961 },
+      ], avgPrice: 21, volume: 1
+    },
+    "食肉": {
+      module: "食肉の製造", outputRate: 2320, inputs: [
+        { ware: "エネルギーセル", rate: 640 },
+        { ware: "水", rate: 800 },
+      ], build:[
+        { ware: "クレイトロニクス", amount: 248 },
+        { ware: "エネルギーセル", amount: 497 },
+        { ware: "船体部品", amount: 910 },
+      ], avgPrice: 48, volume: 6
+    },
+    "香辛料": {
+      module: "香辛料の製造", outputRate: 3000, inputs: [
+        { ware: "エネルギーセル", rate: 240 },
+        { ware: "水", rate: 480 },
+      ], build:[
+        { ware: "クレイトロニクス", amount: 139 },
+        { ware: "エネルギーセル", amount: 278 },
+        { ware: "船体部品", amount: 510 },
+      ], avgPrice: 20, volume: 3
+    },
+    "アルゴン医療品": {
+      module: "アルゴン医療品の製造", outputRate: 2496, inputs: [
+        { ware: "エネルギーセル", rate: 1200 },
+        { ware: "香辛料", rate: 480 },
+        { ware: "水", rate: 720 },
+        { ware: "小麦", rate: 360 },
+      ], build:[
+        { ware: "クレイトロニクス", amount: 225 },
+        { ware: "エネルギーセル", amount: 450 },
+        { ware: "船体部品", amount: 823 },
+      ], avgPrice: 66, volume: 2 
+    },
   };
 
 // SEED is the single source of truth. No persistence; recipes are edited in code.
