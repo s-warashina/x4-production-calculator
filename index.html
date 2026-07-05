@@ -263,6 +263,9 @@
     "シリコン": {
       avgPrice: 130, volume: 10 
     },
+    "ニヴィディウム": {
+      avgPrice: 510, volume: 10 
+    },
     "エネルギーセル": {
       module: "エネルギーセルの製造", outputRate: 10500, inputs: [
       ], build: [
@@ -554,6 +557,27 @@
         { ware: "エネルギーセル", amount: 278 },
         { ware: "船体部品", amount: 510 },
       ], avgPrice: 20, volume: 3
+    },
+    "プロテインペースト": {
+      module: "プロテインペーストの製造", outputRate: 2628, inputs: [
+        { ware: "エネルギーセル", rate: 960 },
+        { ware: "氷", rate: 960 },
+        { ware: "メタン", rate: 2400 },
+      ], build:[
+        { ware: "エネルギーセル", amount: 211 },
+        { ware: "コンピュートロニック基材", amount: 73 },
+        { ware: "炭化ケイ素", amount: 47 },
+      ], avgPrice: 96, volume: 4 
+    },
+    "テランMRE": {
+      module: "テランMREの製造", outputRate: 2625, inputs: [
+        { ware: "エネルギーセル", rate: 900 },
+        { ware: "プロテインペースト", rate: 900 },
+      ], build:[
+        { ware: "エネルギーセル", amount: 89 },
+        { ware: "コンピュートロニック基材", amount: 30 },
+        { ware: "炭化ケイ素", amount: 20 },
+      ], avgPrice: 54, volume: 2 
     },
     "アルゴン医療品": {
       module: "アルゴン医療品の製造", outputRate: 2496, inputs: [
