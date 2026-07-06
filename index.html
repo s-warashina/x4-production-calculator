@@ -1,986 +1,2046 @@
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta charset="utf-8" />
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+/>
 <title>X4 生産ソルバー</title>
-<meta name="theme-color" content="#060912">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="X4 Solver">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%23060912'/><text x='32' y='45' font-family='monospace' font-weight='bold' font-size='30' fill='%2334d8e8' text-anchor='middle'>X4</text></svg>">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#060912" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta
+    name="apple-mobile-web-app-status-bar-style"
+    content="black-translucent"
+/>
+<meta name="apple-mobile-web-app-title" content="X4 Solver" />
+<link
+    rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%23060912'/><text x='32' y='45' font-family='monospace' font-weight='bold' font-size='30' fill='%2334d8e8' text-anchor='middle'>X4</text></svg>"
+/>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+    href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet"
+/>
 <style>
-  :root{
-    --void:#060912; --panel:#0d1424; --panel2:#111b30; --line:#1d2c47;
-    --cyan:#34d8e8; --cyan-dim:#1a8a96; --cyan-soft:#9fe9f2;
-    --amber:#f0a830; --ember:#e85d4a; --green:#5fd29a;
-    --text:#c9d6e8; --muted:#6c809e; --faint:#43536e;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;background:var(--void);color:var(--text);
-    font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:14px;line-height:1.45;}
-  body{padding:18px;max-width:1080px;margin:0 auto;
-    background-image:radial-gradient(circle at 20% -10%, #0e1c33 0, transparent 55%),
-                     radial-gradient(circle at 100% 0%, #0c1a2c 0, transparent 45%);}
-  h1,h2,h3,.disp{font-family:'Rajdhani',sans-serif;letter-spacing:.04em;margin:0;}
-  a{color:var(--cyan)}
-  .head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
-    border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:18px;}
-  .head h1{font-size:30px;font-weight:700;color:#eaf6fb;text-transform:uppercase;}
-  .head .v{font-size:13px;color:var(--cyan);border:1px solid var(--cyan-dim);
-    padding:1px 8px;border-radius:2px;letter-spacing:.12em;}
-  .head .sub{font-size:12px;color:var(--muted);margin-left:auto;}
-  .panel{background:linear-gradient(180deg,var(--panel) 0,#0a1120 100%);
-    border:1px solid var(--line);border-radius:5px;padding:16px;margin-bottom:16px;
-    position:relative;}
-  .panel::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:2px;
-    background:linear-gradient(180deg,var(--cyan),transparent);border-radius:2px;}
-  .eyebrow{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:13px;
-    letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);margin-bottom:12px;
-    display:flex;align-items:center;gap:8px;}
-  .eyebrow .num{color:var(--faint);font-weight:700;}
-  label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
-    color:var(--muted);margin-bottom:5px;}
-  select,input,button{font-family:'IBM Plex Mono',monospace;font-size:14px;
-    background:#0a1322;color:var(--text);border:1px solid var(--line);
-    border-radius:3px;padding:8px 10px;outline:none;}
-  select:focus,input:focus{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(52,216,232,.12);}
-  input[type=number]{width:100%;}
-  button{cursor:pointer;background:#0e2233;border-color:var(--cyan-dim);color:var(--cyan-soft);
-    font-weight:600;letter-spacing:.06em;transition:.12s;}
-  button:hover{background:#123347;border-color:var(--cyan);}
-  button:active{transform:translateY(1px);}
-  .btn-go{background:var(--cyan-dim);color:#04141a;border-color:var(--cyan);
-    font-family:'Rajdhani';font-size:16px;font-weight:700;letter-spacing:.14em;
-    text-transform:uppercase;padding:10px 22px;}
-  .btn-go:hover{background:var(--cyan);}
-  .btn-sm{padding:4px 9px;font-size:12px;}
-  .btn-danger{color:var(--ember);border-color:#5a2a26;background:#1c1011;}
-  .btn-danger:hover{border-color:var(--ember);background:#2a1413;}
-  .target-row{display:grid;gap:10px 12px;align-items:end;margin-bottom:10px;
-    grid-template-columns:1fr 130px auto;
-    grid-template-areas:"ware mods remove";}
-  .target-row .f{min-width:0;}
-  .target-row .f-ware{grid-area:ware;}
-  .target-row .f-mods{grid-area:mods;}
-  .target-row .t-remove{grid-area:remove;padding:8px 12px;align-self:end;}
-  .target-actions{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
-  /* 目標追加 / 計算 ボタンは同サイズに揃える */
-  #addTargetBtn,#solveBtn{padding:9px 20px;font-size:14px;}
-  .tree-target + .tree-target{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);}
-  .tree-head{font-family:'Rajdhani';font-weight:700;font-size:16px;color:#eaf6fb;
-    margin-bottom:4px;display:flex;align-items:baseline;gap:8px;}
-  /* stat cards */
-  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
-  .stat{background:#0a1322;border:1px solid var(--line);border-radius:4px;padding:12px 14px;}
-  .stat .k{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
-  .stat .val{font-family:'Rajdhani';font-size:20px;font-weight:700;line-height:1.1;color:#eaf6fb;}
-  .stat .val.amber{color:var(--amber);} .stat .val.cyan{color:var(--cyan);}
-  /* tree */
-  .tree{font-size:13px;margin-top:4px;}
-  .tnode{padding:3px 0;border-left:1px solid var(--faint);}
-  .tnode>.row{display:flex;align-items:baseline;gap:8px;padding-left:12px;position:relative;}
-  .tnode>.row::before{content:"";position:absolute;left:0;top:11px;width:9px;height:1px;
-    background:var(--faint);}
-  .tw{font-weight:600;}
-  .tw.prod{color:var(--cyan-soft);} .tw.raw{color:var(--amber);}
-  .trate{color:var(--muted);font-size:12px;}
-  .tmod{margin-left:auto;font-size:12px;color:var(--cyan);white-space:nowrap;}
-  .tag-raw{font-size:10px;letter-spacing:.1em;color:var(--amber);border:1px solid #5a4318;
-    padding:0 5px;border-radius:2px;text-transform:uppercase;}
-  .children{margin-left:14px;}
-  /* tables */
-  table{width:100%;border-collapse:collapse;margin-top:4px;}
-  th{font-family:'Rajdhani';font-weight:600;text-align:left;font-size:12px;letter-spacing:.08em;
-    text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line);padding:7px 8px;}
-  td{padding:7px 8px;border-bottom:1px solid #131f33;}
-  td.r,th.r{text-align:right;}
-  th.sortable{cursor:pointer;user-select:none;white-space:nowrap;}
-  th.sortable:hover{color:var(--cyan);}
-  tr:hover td{background:#0c1626;}
-  .num{font-variant-numeric:tabular-nums;}
-  .tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  #modTable{min-width:440px;}
-  #buildTable{min-width:440px;}
-  #rawTable{min-width:360px;}
-  #ecoTable{min-width:560px;}
-  .amber{color:var(--amber);} .cyan{color:var(--cyan-soft);} .muted{color:var(--muted);}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-  @media(max-width:720px){.grid2{grid-template-columns:1fr;}}
-  /* recipe editor */
-  .rcard{background:#0a1322;border:1px solid var(--line);border-radius:4px;padding:11px 13px;margin-bottom:10px;}
-  .rcard .top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
-  .rcard .rname{font-family:'Rajdhani';font-weight:700;font-size:18px;color:var(--cyan-soft);}
-  .rcard .rout{font-size:12px;color:var(--muted);}
-  .inrow{display:grid;grid-template-columns:1fr 110px 36px;gap:8px;margin-bottom:6px;align-items:center;}
-  .inrow input:first-child{width:100%;}
-  .hint{font-size:12px;color:var(--muted);margin:6px 0 0;}
-  .warn{color:var(--amber);}
-  .toggle{cursor:pointer;color:var(--cyan);font-size:12px;letter-spacing:.08em;user-select:none;}
-  .foot{color:var(--faint);font-size:11px;text-align:center;margin-top:8px;}
-  .empty{color:var(--muted);font-style:italic;padding:8px 0;}
-  /* ---- flow graph (全ウェア依存関係) ---- */
-  .flow-wrap{overflow:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);
-    border-radius:4px;background:#070d18;
-    background-image:linear-gradient(90deg,#0a1322 1px,transparent 1px),
-                     linear-gradient(180deg,#0a1322 1px,transparent 1px);
-    background-size:48px 48px;background-position:-1px -1px;}
-  .flow svg{display:block;}
-  .flow-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;letter-spacing:.08em;
-    text-transform:uppercase;color:var(--muted);margin-bottom:10px;align-items:center;}
-  .flow-legend .key{display:inline-flex;align-items:center;gap:6px;}
-  .flow-legend .sw{width:11px;height:11px;border-radius:2px;border:1px solid;}
-  .flow-legend .sw.raw{border-color:#5a4318;background:#241a0a;}
-  .flow-legend .sw.prod{border-color:var(--cyan-dim);background:#0a1d27;}
-  .flow-legend .note{margin-left:auto;color:var(--faint);text-transform:none;letter-spacing:0;}
-  .fedge{fill:none;stroke:#23344f;stroke-width:1.2;stroke-linejoin:round;stroke-linecap:round;
-    transition:stroke .12s,stroke-width .12s,opacity .12s;}
-  .fnode rect{transition:stroke .12s,filter .12s;cursor:default;}
-  .fnode text{font-family:'IBM Plex Mono',monospace;font-size:10px;fill:var(--text);
-    pointer-events:none;dominant-baseline:central;}
-  .fnode.raw rect{fill:#1a1306;stroke:#5a4318;}
-  .fnode.raw text{fill:var(--amber);}
-  .fnode.prod rect{fill:#0a1b25;stroke:var(--cyan-dim);}
-  .fnode.prod text{fill:var(--cyan-soft);}
-  /* hover 強調: 直下(1次)素材=アンバー / 2次以降=シアン を再帰的に点灯 */
-  .flow.hovering .fedge{opacity:.1;}
-  .flow.hovering .fnode rect{opacity:.28;}
-  .flow.hovering .fnode text{opacity:.28;}
-  .fedge.hot1{stroke:var(--amber);stroke-width:2;opacity:1 !important;}
-  .fedge.hot2{stroke:var(--cyan);stroke-width:2;opacity:1 !important;}
-  .fnode.self rect,.fnode.on1 rect,.fnode.on2 rect,
-  .fnode.self text,.fnode.on1 text,.fnode.on2 text{opacity:1 !important;}
-  .fnode.self rect{stroke:var(--cyan);stroke-width:2;filter:drop-shadow(0 0 7px rgba(52,216,232,.7));}
-  .fnode.on1 rect{stroke:var(--amber);filter:drop-shadow(0 0 6px rgba(240,168,48,.6));}
-  .fnode.on2 rect{stroke:var(--cyan);filter:drop-shadow(0 0 5px rgba(52,216,232,.5));}
-  /* ---- mobile (iPhone 等) ---- */
-  @media(max-width:560px){
-    body{padding:12px;}
-    .head{gap:8px;padding-bottom:10px;margin-bottom:14px;}
-    .head h1{font-size:24px;}
-    .panel{padding:13px;margin-bottom:13px;}
-    /* 目標行: 折り返さず 1 行に収める。モジュール数列を詰めてウェア選択を伸縮させる */
-    .target-row{gap:8px;grid-template-columns:minmax(0,1fr) 88px auto;
-      grid-template-areas:"ware mods remove";}
-    .target-row .t-mods{padding:8px 6px;}
-    .target-row .t-remove{padding:8px 10px;min-width:42px;font-size:15px;}
-    .target-row label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .target-actions{justify-content:stretch;}
-    #addTargetBtn{flex:1;}
-    #solveBtn{flex:1;}
-    .stat .val{font-size:26px;}
-    /* 収益性テーブル: フォントを小さくし、ウェア列が潰れないよう折り返しを抑止 */
-    #ecoTable{font-size:11px;}
-    #ecoTable th,#ecoTable td{padding:5px 6px;}
-    #ecoTable td.cyan{white-space:nowrap;}
-  }
+    :root {
+        --void: #060912;
+        --panel: #0d1424;
+        --panel2: #111b30;
+        --line: #1d2c47;
+        --cyan: #34d8e8;
+        --cyan-dim: #1a8a96;
+        --cyan-soft: #9fe9f2;
+        --amber: #f0a830;
+        --ember: #e85d4a;
+        --green: #5fd29a;
+        --text: #c9d6e8;
+        --muted: #6c809e;
+        --faint: #43536e;
+    }
+    * {
+        box-sizing: border-box;
+    }
+    html,
+    body {
+        margin: 0;
+        background: var(--void);
+        color: var(--text);
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 14px;
+        line-height: 1.45;
+    }
+    body {
+        padding: 18px;
+        max-width: 1080px;
+        margin: 0 auto;
+        background-image:
+            radial-gradient(circle at 20% -10%, #0e1c33 0, transparent 55%),
+            radial-gradient(circle at 100% 0%, #0c1a2c 0, transparent 45%);
+    }
+    h1,
+    h2,
+    h3,
+    .disp {
+        font-family: "Rajdhani", sans-serif;
+        letter-spacing: 0.04em;
+        margin: 0;
+    }
+    a {
+        color: var(--cyan);
+    }
+    .head {
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+        flex-wrap: wrap;
+        border-bottom: 1px solid var(--line);
+        padding-bottom: 12px;
+        margin-bottom: 18px;
+    }
+    .head h1 {
+        font-size: 30px;
+        font-weight: 700;
+        color: #eaf6fb;
+        text-transform: uppercase;
+    }
+    .head .v {
+        font-size: 13px;
+        color: var(--cyan);
+        border: 1px solid var(--cyan-dim);
+        padding: 1px 8px;
+        border-radius: 2px;
+        letter-spacing: 0.12em;
+    }
+    .head .sub {
+        font-size: 12px;
+        color: var(--muted);
+        margin-left: auto;
+    }
+    /* view tabs (生産ソルバー / セクター資源) */
+    .tabs {
+        margin-left: auto;
+        display: flex;
+        gap: 6px;
+    }
+    .tab {
+        padding: 5px 14px;
+        font-family: "Rajdhani", sans-serif;
+        font-weight: 600;
+        font-size: 13px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        background: transparent;
+        border: 1px solid var(--line);
+        color: var(--muted);
+        border-radius: 3px;
+    }
+    .tab:hover {
+        color: var(--cyan-soft);
+        border-color: var(--cyan-dim);
+        background: #0e2233;
+    }
+    .tab.active {
+        color: var(--cyan);
+        border-color: var(--cyan-dim);
+        background: #0e2233;
+    }
+    .panel {
+        background: linear-gradient(180deg, var(--panel) 0, #0a1120 100%);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        padding: 16px;
+        margin-bottom: 16px;
+        position: relative;
+    }
+    .panel::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 14px;
+        bottom: 14px;
+        width: 2px;
+        background: linear-gradient(180deg, var(--cyan), transparent);
+        border-radius: 2px;
+    }
+    .eyebrow {
+        font-family: "Rajdhani", sans-serif;
+        font-weight: 600;
+        font-size: 13px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--cyan);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .eyebrow .num {
+        color: var(--faint);
+        font-weight: 700;
+    }
+    label {
+        display: block;
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 5px;
+    }
+    select,
+    input,
+    button {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 14px;
+        background: #0a1322;
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        padding: 8px 10px;
+        outline: none;
+    }
+    select:focus,
+    input:focus {
+        border-color: var(--cyan);
+        box-shadow: 0 0 0 2px rgba(52, 216, 232, 0.12);
+    }
+    input[type="number"] {
+        width: 100%;
+    }
+    button {
+        cursor: pointer;
+        background: #0e2233;
+        border-color: var(--cyan-dim);
+        color: var(--cyan-soft);
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        transition: 0.12s;
+    }
+    button:hover {
+        background: #123347;
+        border-color: var(--cyan);
+    }
+    button:active {
+        transform: translateY(1px);
+    }
+    .btn-go {
+        background: var(--cyan-dim);
+        color: #04141a;
+        border-color: var(--cyan);
+        font-family: "Rajdhani";
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        padding: 10px 22px;
+    }
+    .btn-go:hover {
+        background: var(--cyan);
+    }
+    .btn-sm {
+        padding: 4px 9px;
+        font-size: 12px;
+    }
+    .btn-danger {
+        color: var(--ember);
+        border-color: #5a2a26;
+        background: #1c1011;
+    }
+    .btn-danger:hover {
+        border-color: var(--ember);
+        background: #2a1413;
+    }
+    .target-row {
+        display: grid;
+        gap: 10px 12px;
+        align-items: end;
+        margin-bottom: 10px;
+        grid-template-columns: 1fr 130px auto;
+        grid-template-areas: "ware mods remove";
+    }
+    .target-row .f {
+        min-width: 0;
+    }
+    .target-row .f-ware {
+        grid-area: ware;
+    }
+    .target-row .f-mods {
+        grid-area: mods;
+    }
+    .target-row .t-remove {
+        grid-area: remove;
+        padding: 8px 12px;
+        align-self: end;
+    }
+    .target-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    /* 目標追加 / 計算 ボタンは同サイズに揃える */
+    #addTargetBtn,
+    #solveBtn {
+        padding: 9px 20px;
+        font-size: 14px;
+    }
+    .tree-target + .tree-target {
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+    }
+    .tree-head {
+        font-family: "Rajdhani";
+        font-weight: 700;
+        font-size: 16px;
+        color: #eaf6fb;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+    }
+    /* stat cards */
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+    }
+    .stat {
+        background: #0a1322;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 12px 14px;
+    }
+    .stat .k {
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
+    .stat .val {
+        font-family: "Rajdhani";
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1.1;
+        color: #eaf6fb;
+    }
+    .stat .val.amber {
+        color: var(--amber);
+    }
+    .stat .val.cyan {
+        color: var(--cyan);
+    }
+    /* tree */
+    .tree {
+        font-size: 13px;
+        margin-top: 4px;
+    }
+    .tnode {
+        padding: 3px 0;
+        border-left: 1px solid var(--faint);
+    }
+    .tnode > .row {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        padding-left: 12px;
+        position: relative;
+    }
+    .tnode > .row::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 11px;
+        width: 9px;
+        height: 1px;
+        background: var(--faint);
+    }
+    .tw {
+        font-weight: 600;
+    }
+    .tw.prod {
+        color: var(--cyan-soft);
+    }
+    .tw.raw {
+        color: var(--amber);
+    }
+    .trate {
+        color: var(--muted);
+        font-size: 12px;
+    }
+    .tmod {
+        margin-left: auto;
+        font-size: 12px;
+        color: var(--cyan);
+        white-space: nowrap;
+    }
+    .tag-raw {
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        color: var(--amber);
+        border: 1px solid #5a4318;
+        padding: 0 5px;
+        border-radius: 2px;
+        text-transform: uppercase;
+    }
+    .children {
+        margin-left: 14px;
+    }
+    /* tables */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 4px;
+    }
+    th {
+        font-family: "Rajdhani";
+        font-weight: 600;
+        text-align: left;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        border-bottom: 1px solid var(--line);
+        padding: 7px 8px;
+    }
+    td {
+        padding: 7px 8px;
+        border-bottom: 1px solid #131f33;
+    }
+    td.r,
+    th.r {
+        text-align: right;
+    }
+    th.sortable {
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+    }
+    th.sortable:hover {
+        color: var(--cyan);
+    }
+    tr:hover td {
+        background: #0c1626;
+    }
+    .num {
+        font-variant-numeric: tabular-nums;
+    }
+    .tscroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    #modTable {
+        min-width: 440px;
+    }
+    #buildTable {
+        min-width: 440px;
+    }
+    #rawTable {
+        min-width: 360px;
+    }
+    #ecoTable {
+        min-width: 560px;
+    }
+    #sectorTable {
+        min-width: 760px;
+    }
+    .amber {
+        color: var(--amber);
+    }
+    .cyan {
+        color: var(--cyan-soft);
+    }
+    .muted {
+        color: var(--muted);
+    }
+    .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    @media (max-width: 720px) {
+        .grid2 {
+            grid-template-columns: 1fr;
+        }
+    }
+    /* recipe editor */
+    .rcard {
+        background: #0a1322;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 11px 13px;
+        margin-bottom: 10px;
+    }
+    .rcard .top {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+    .rcard .rname {
+        font-family: "Rajdhani";
+        font-weight: 700;
+        font-size: 18px;
+        color: var(--cyan-soft);
+    }
+    .rcard .rout {
+        font-size: 12px;
+        color: var(--muted);
+    }
+    .inrow {
+        display: grid;
+        grid-template-columns: 1fr 110px 36px;
+        gap: 8px;
+        margin-bottom: 6px;
+        align-items: center;
+    }
+    .inrow input:first-child {
+        width: 100%;
+    }
+    .hint {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 6px 0 0;
+    }
+    .warn {
+        color: var(--amber);
+    }
+    .toggle {
+        cursor: pointer;
+        color: var(--cyan);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        user-select: none;
+    }
+    .foot {
+        color: var(--faint);
+        font-size: 11px;
+        text-align: center;
+        margin-top: 8px;
+    }
+    .empty {
+        color: var(--muted);
+        font-style: italic;
+        padding: 8px 0;
+    }
+    /* ---- flow graph (全ウェア依存関係) ---- */
+    .flow-wrap {
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        background: #070d18;
+        background-image:
+            linear-gradient(90deg, #0a1322 1px, transparent 1px),
+            linear-gradient(180deg, #0a1322 1px, transparent 1px);
+        background-size: 48px 48px;
+        background-position: -1px -1px;
+    }
+    .flow svg {
+        display: block;
+    }
+    .flow-legend {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 10px;
+        align-items: center;
+    }
+    .flow-legend .key {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .flow-legend .sw {
+        width: 11px;
+        height: 11px;
+        border-radius: 2px;
+        border: 1px solid;
+    }
+    .flow-legend .sw.raw {
+        border-color: #5a4318;
+        background: #241a0a;
+    }
+    .flow-legend .sw.prod {
+        border-color: var(--cyan-dim);
+        background: #0a1d27;
+    }
+    .flow-legend .note {
+        margin-left: auto;
+        color: var(--faint);
+        text-transform: none;
+        letter-spacing: 0;
+    }
+    .fedge {
+        fill: none;
+        stroke: #23344f;
+        stroke-width: 1.2;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        transition:
+            stroke 0.12s,
+            stroke-width 0.12s,
+            opacity 0.12s;
+    }
+    .fnode rect {
+        transition:
+            stroke 0.12s,
+            filter 0.12s;
+        cursor: default;
+    }
+    .fnode text {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 10px;
+        fill: var(--text);
+        pointer-events: none;
+        dominant-baseline: central;
+    }
+    .fnode.raw rect {
+        fill: #1a1306;
+        stroke: #5a4318;
+    }
+    .fnode.raw text {
+        fill: var(--amber);
+    }
+    .fnode.prod rect {
+        fill: #0a1b25;
+        stroke: var(--cyan-dim);
+    }
+    .fnode.prod text {
+        fill: var(--cyan-soft);
+    }
+    /* hover 強調: 直下(1次)素材=アンバー / 2次以降=シアン を再帰的に点灯 */
+    .flow.hovering .fedge {
+        opacity: 0.1;
+    }
+    .flow.hovering .fnode rect {
+        opacity: 0.28;
+    }
+    .flow.hovering .fnode text {
+        opacity: 0.28;
+    }
+    .fedge.hot1 {
+        stroke: var(--amber);
+        stroke-width: 2;
+        opacity: 1 !important;
+    }
+    .fedge.hot2 {
+        stroke: var(--cyan);
+        stroke-width: 2;
+        opacity: 1 !important;
+    }
+    .fnode.self rect,
+    .fnode.on1 rect,
+    .fnode.on2 rect,
+    .fnode.self text,
+    .fnode.on1 text,
+    .fnode.on2 text {
+        opacity: 1 !important;
+    }
+    .fnode.self rect {
+        stroke: var(--cyan);
+        stroke-width: 2;
+        filter: drop-shadow(0 0 7px rgba(52, 216, 232, 0.7));
+    }
+    .fnode.on1 rect {
+        stroke: var(--amber);
+        filter: drop-shadow(0 0 6px rgba(240, 168, 48, 0.6));
+    }
+    .fnode.on2 rect {
+        stroke: var(--cyan);
+        filter: drop-shadow(0 0 5px rgba(52, 216, 232, 0.5));
+    }
+    /* ---- mobile (iPhone 等) ---- */
+    @media (max-width: 560px) {
+        body {
+            padding: 12px;
+        }
+        .head {
+            gap: 8px;
+            padding-bottom: 10px;
+            margin-bottom: 14px;
+        }
+        .head h1 {
+            font-size: 24px;
+        }
+        .panel {
+            padding: 13px;
+            margin-bottom: 13px;
+        }
+        /* 目標行: 折り返さず 1 行に収める。モジュール数列を詰めてウェア選択を伸縮させる */
+        .target-row {
+            gap: 8px;
+            grid-template-columns: minmax(0, 1fr) 88px auto;
+            grid-template-areas: "ware mods remove";
+        }
+        .target-row .t-mods {
+            padding: 8px 6px;
+        }
+        .target-row .t-remove {
+            padding: 8px 10px;
+            min-width: 42px;
+            font-size: 15px;
+        }
+        .target-row label {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .target-actions {
+            justify-content: stretch;
+        }
+        #addTargetBtn {
+            flex: 1;
+        }
+        #solveBtn {
+            flex: 1;
+        }
+        .stat .val {
+            font-size: 26px;
+        }
+        /* 収益性テーブル: フォントを小さくし、ウェア列が潰れないよう折り返しを抑止 */
+        #ecoTable {
+            font-size: 11px;
+        }
+        #ecoTable th,
+        #ecoTable td {
+            padding: 5px 6px;
+        }
+        #ecoTable td.cyan {
+            white-space: nowrap;
+        }
+        /* セクター資源テーブルも同様に詰める */
+        #sectorTable {
+            font-size: 11px;
+        }
+        #sectorTable th,
+        #sectorTable td {
+            padding: 5px 6px;
+        }
+        #sectorTable td.cyan {
+            white-space: nowrap;
+        }
+        .tabs {
+            width: 100%;
+            margin-left: 0;
+        }
+        .tab {
+            flex: 1;
+        }
+    }
 </style>
 
 <div class="head">
-  <h1>X4 生産ソルバー</h1>
-  <span class="v">v9.0</span>
+    <h1>X4 生産ソルバー</h1>
+    <span class="v">v9.0</span>
+    <nav class="tabs">
+        <button class="tab active" data-view="solver">生産計算</button>
+        <button class="tab" data-view="sectors">セクター資源</button>
+    </nav>
 </div>
 
-<div class="panel">
-  <div class="eyebrow"><span class="num">01</span> 目標設定 / Target</div>
-  <div id="targetList"></div>
-  <div class="target-actions">
-    <button class="btn-sm" id="addTargetBtn">＋ 目標を追加</button>
-    <button class="btn-go" id="solveBtn">▶ 計算</button>
-  </div>
-  <p class="hint" id="targetHint"></p>
-</div>
-
-<div id="results" style="display:none">
-  <div class="panel">
-    <div class="eyebrow"><span class="num">02</span> サマリー / Summary</div>
-    <div class="stats" id="statCards"></div>
-  </div>
-
-  <div class="grid2">
+<div id="view-solver">
     <div class="panel">
-      <div class="eyebrow"><span class="num">03</span> 生産カスケード</div>
-      <div class="tree" id="tree"></div>
+        <div class="eyebrow"><span class="num">01</span> 目標設定 / Target</div>
+        <div id="targetList"></div>
+        <div class="target-actions">
+            <button class="btn-sm" id="addTargetBtn">＋ 目標を追加</button>
+            <button class="btn-go" id="solveBtn">▶ 計算</button>
+        </div>
+        <p class="hint" id="targetHint"></p>
     </div>
+
+    <div id="results" style="display: none">
+        <div class="panel">
+            <div class="eyebrow">
+                <span class="num">02</span> サマリー / Summary
+            </div>
+            <div class="stats" id="statCards"></div>
+        </div>
+
+        <div class="grid2">
+            <div class="panel">
+                <div class="eyebrow">
+                    <span class="num">03</span> 生産カスケード
+                </div>
+                <div class="tree" id="tree"></div>
+            </div>
+            <div class="panel">
+                <div class="eyebrow">
+                    <span class="num">04</span> 採掘・購入材料
+                    <span class="tag-raw">RAW</span>
+                </div>
+                <div class="tscroll"><table id="rawTable"></table></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="eyebrow">
+                <span class="num">05</span> 必要生産モジュール
+            </div>
+            <p class="hint">
+                建設費用は必要基数の切り上げ × 1基あたり建設素材 ×
+                単価(価格記載分のみ)。一部素材が未記載のモジュールは概算で「*」を付す。
+            </p>
+            <div class="tscroll"><table id="modTable"></table></div>
+        </div>
+
+        <div class="panel">
+            <div class="eyebrow">
+                <span class="num">06</span> 建設素材 / Construction Materials
+            </div>
+            <p class="hint">
+                各生産モジュールを建てるのに必要な建設素材の総量(必要基数の切り上げ
+                × SEED の build)。素材に avgPrice があれば概算費用も表示。
+            </p>
+            <div class="tscroll"><table id="buildTable"></table></div>
+        </div>
+    </div>
+
     <div class="panel">
-      <div class="eyebrow"><span class="num">04</span> 採掘・購入材料 <span class="tag-raw">RAW</span></div>
-      <div class="tscroll"><table id="rawTable"></table></div>
+        <div class="eyebrow">
+            <span class="num">07</span> 生産フロー / Dependency Map
+        </div>
+        <div class="flow-legend">
+            <span class="key"
+                ><span class="sw raw"></span> 採掘・購入 (RAW)</span
+            >
+            <span class="key"><span class="sw prod"></span> 生産ウェア</span>
+            <span class="note"
+                >左 = 素材 / 右 = 加工品 ・
+                ノードにカーソルを合わせると依存を強調</span
+            >
+        </div>
+        <div class="flow-wrap"><div class="flow" id="flow"></div></div>
     </div>
-  </div>
 
-  <div class="panel">
-    <div class="eyebrow"><span class="num">05</span> 必要生産モジュール</div>
-    <p class="hint">建設費用は必要基数の切り上げ × 1基あたり建設素材 × 単価(価格記載分のみ)。一部素材が未記載のモジュールは概算で「*」を付す。</p>
-    <div class="tscroll"><table id="modTable"></table></div>
-  </div>
-
-  <div class="panel">
-    <div class="eyebrow"><span class="num">06</span> 建設素材 / Construction Materials</div>
-    <p class="hint">各生産モジュールを建てるのに必要な建設素材の総量(必要基数の切り上げ × SEED の build)。素材に avgPrice があれば概算費用も表示。</p>
-    <div class="tscroll"><table id="buildTable"></table></div>
-  </div>
+    <div class="panel">
+        <div class="eyebrow">
+            <span class="num">08</span> 収益性 / Economics
+        </div>
+        <p class="hint">
+            SEED に avgPrice / volume
+            を記載した全ウェアを表示(目標とは独立)。生産量/h・価値/h は 1
+            基(outputRate)あたり。体積あたり価値 = 平均価格 ÷
+            体積。列見出しクリックで昇順 / 降順ソート。
+        </p>
+        <div class="tscroll"><table id="ecoTable"></table></div>
+    </div>
 </div>
+<!-- /view-solver -->
 
-<div class="panel">
-  <div class="eyebrow"><span class="num">07</span> 生産フロー / Dependency Map</div>
-  <div class="flow-legend">
-    <span class="key"><span class="sw raw"></span> 採掘・購入 (RAW)</span>
-    <span class="key"><span class="sw prod"></span> 生産ウェア</span>
-    <span class="note">左 = 素材 / 右 = 加工品 ・ ノードにカーソルを合わせると依存を強調</span>
-  </div>
-  <div class="flow-wrap"><div class="flow" id="flow"></div></div>
-</div>
-
-<div class="panel">
-  <div class="eyebrow"><span class="num">08</span> 収益性 / Economics</div>
-  <p class="hint">SEED に avgPrice / volume を記載した全ウェアを表示(目標とは独立)。生産量/h・価値/h は 1 基(outputRate)あたり。体積あたり価値 = 平均価格 ÷ 体積。列見出しクリックで昇順 / 降順ソート。</p>
-  <div class="tscroll"><table id="ecoTable"></table></div>
+<div id="view-sectors" style="display: none">
+    <div class="panel">
+        <div class="eyebrow">
+            <span class="num">01</span> セクター資源 / Sector Resources
+        </div>
+        <p class="hint">
+            セクターごとの採掘資源量。データはコード内 SECTORS
+            を直接編集する(SEED と同じ運用)。 数値 = 実測 yield /
+            <span class="muted">0</span> = 資源なし / — =
+            未調査。列見出しクリックで昇順 / 降順ソート。
+        </p>
+        <div class="tscroll"><table id="sectorTable"></table></div>
+    </div>
 </div>
 
 <script>
-//============ default seed (user's image data, Energy Cells deduplicated) ============
-// build: 任意。生産モジュール「1基」を建設するのに必要な建設素材リスト。
-//   形式: build:[ {ware:"<素材名>", amount:<個数>}, ... ]  ※ amount は per-hour ではなく一回限りの個数
-//   inputs(毎時消費)とは別物なので混ぜない。未記載ウェアは下の正規化で build:[] 扱い。
-//   例) "クレイトロニクス": { ..., build:[ {ware:"船体部品",amount:330}, {ware:"クレイトロニクス",amount:115} ] }
-  const SEED = {
-    "水素": {
-      avgPrice: 58, volume: 6 
-    },
-    "メタン": {
-      avgPrice: 48, volume: 6 
-    },
-    "ヘリウム": {
-      avgPrice: 44, volume: 6 
-    },
-    "氷": {
-      avgPrice: 30, volume: 8 
-    },
-    "鉱石": {
-      avgPrice: 50, volume: 10 
-    },
-    "シリコン": {
-      avgPrice: 130, volume: 10 
-    },
-    "ニヴィディウム": {
-      avgPrice: 510, volume: 10 
-    },
-    "エネルギーセル": {
-      module: "エネルギーセルの製造", outputRate: 10500, inputs: [
-      ], build: [
-        { ware: "クレイトロニクス", amount: 260 },
-        { ware: "エネルギーセル", amount: 520 },
-        { ware: "船体部品", amount: 951 },
-      ], avgPrice: 16, volume: 1
-    },
-    "クレイトロニクス": {
-      module: "クレイトロニクスの製造", outputRate: 432, inputs: [
-        { ware: "エネルギーセル", rate: 560 },
-        { ware: "反物質セル", rate: 400 },
-        { ware: "マイクロチップ", rate: 640 },
-        { ware: "量子チューブ", rate: 400 },
-      ], build: [
-        { ware: "高度化合物", amount: 5630 },
-        { ware: "エネルギーセル", amount: 6571 },
-        { ware: "プラズマ伝導体", amount: 4737 },
-      ], avgPrice: 2040, volume: 24
-    },
-    "グラフェン": {
-      module: "グラフェンの製造", outputRate: 1440, inputs: [
-        { ware: "エネルギーセル", rate: 1200 },
-        { ware: "メタン", rate: 4800 },
-      ], build: [
-        { ware: "クレイトロニクス", amount: 28 },
-        { ware: "エネルギーセル", amount: 57 },
-        { ware: "船体部品", amount: 104 },
-      ], avgPrice: 166, volume: 20
-    },
-    "製錬金属": {
-      module: "製錬金属の製造", outputRate: 2112, inputs: [
-        { ware: "エネルギーセル", rate: 2160 },
-        { ware: "鉱石", rate: 5760 },
-      ], build:[
-        { ware: "クレイトロニクス", amount: 36 },
-        { ware: "エネルギーセル", amount: 73 },
-        { ware: "船体部品", amount: 135 },
-      ], avgPrice: 148, volume: 14
-    },
-    "シリコンウェハー": {
-      module: "シリコンウェハーの製造", outputRate: 2140, inputs: [
-        { ware: "エネルギーセル", rate: 1800 },
-        { ware: "シリコン", rate: 4800 },
-      ], build: [
-        { ware: "クレイトロニクス", amount: 74 },
-        { ware: "エネルギーセル", amount: 149 },
-        { ware: "船体部品", amount: 273 },
-      ], avgPrice: 299, volume: 18
-    },
-    "船体部品": {
-      module: "船体部品の製造", outputRate: 1176, inputs: [
-        { ware: "エネルギーセル", rate: 320 },
-        { ware: "グラフェン", rate: 160 },
-        { ware: "製錬金属", rate: 1120 },
-      ], build: [
-        { ware: "高度化合物", amount: 853 },
-        { ware: "エネルギーセル", amount: 1357 },
-        { ware: "プラズマ伝導体", amount: 1228 },
-      ], avgPrice: 209, volume: 12
-    },
-    "マイクロチップ": {
-      module: "マイクロチップの製造", outputRate: 432, inputs: [
-        { ware: "エネルギーセル", rate: 300 },
-        { ware: "シリコンウェハー", rate: 1200 },
-      ], build: [
-        { ware: "クレイトロニクス", amount: 758 },
-        { ware: "エネルギーセル", amount: 1516 },
-        { ware: "船体部品", amount: 2774 },
-      ], avgPrice: 948, volume: 22
-    },
-    "量子チューブ": {
-      module: "量子チューブの製造", outputRate: 470, inputs: [
-        { ware: "エネルギーセル", rate: 200 },
-        { ware: "グラフェン", rate: 580 },
-        { ware: "超流動冷媒", rate: 150 },
-      ], avgPrice: 300, volume: 22
-    },
-    "反物質セル": {
-      module: "反物質セルの製造", outputRate: 2970, inputs: [
-        { ware: "エネルギーセル", rate: 3000 },
-        { ware: "水素", rate: 9600 },
-      ], avgPrice: 202, volume: 18
-    },
-    "反物質コンバーター": {
-      module: "反物質コンバーターの製造", outputRate: 1596, inputs: [
-        { ware: "エネルギーセル", rate: 960 },
-        { ware: "高度化合物", rate: 240 },
-        { ware: "マイクロチップ", rate: 360 },
-      ], avgPrice: 354, volume: 10
-    },
-    "水": {
-      module: "水の製造", outputRate: 5790, inputs: [
-        { ware: "エネルギーセル", rate: 1800 },
-        { ware: "氷", rate: 9600 },
-      ], build:[
-        { ware: "クレイトロニクス", amount: 36 },
-        { ware: "エネルギーセル", amount: 72 },
-        { ware: "船体部品", amount: 132 },
-      ], avgPrice: 53, volume: 6
-    },
-    "ボーガス": {
-      module: "ボーガスの製造", outputRate: 110, inputs: [
-        { ware: "エネルギーセル", rate: 40 },
-        { ware: "水", rate: 100 },
-      ]
-    },
-    "プランクトン": {
-      module: "プランクトンの製造", outputRate: 275, inputs: [
-        { ware: "エネルギーセル", rate: 20 },
-        { ware: "水", rate: 50 },
-      ]
-    },
-    "ボウフ": {
-      module: "ボウフの製造", outputRate: 82, inputs: [
-        { ware: "エネルギーセル", rate: 40 },
-        { ware: "ボーガス", rate: 40 },
-        { ware: "プランクトン", rate: 120 },
-      ], avgPrice: 101, volume: 4
-    },
-    "ボロン医療品": {
-      module: "ボロン医療品の製造", outputRate: 208, inputs: [
-        { ware: "エネルギーセル", rate: 100 },
-        { ware: "水", rate: 60 },
-        { ware: "プランクトン", rate: 95 },
-      ], avgPrice: 66, volume: 2
-    },
-    "超流動冷媒": {
-      module: "超流動冷媒の製造", outputRate: 1425, inputs: [
-        { ware: "エネルギーセル", rate: 900 },
-        { ware: "ヘリウム", rate: 4800 },
-      ], avgPrice: 150, volume: 16
-    },
-    "プラズマ伝導体": {
-      module: "プラズマ伝導体の製造", outputRate: 176, inputs: [
-        { ware: "エネルギーセル", rate: 240 },
-        { ware: "グラフェン", rate: 384 },
-        { ware: "超流動冷媒", rate: 560 },
-      ], build:[
-        { ware: "クレイトロニクス", amount: 473 },
-        { ware: "エネルギーセル", amount: 946 },
-        { ware: "船体部品", amount: 1732 },
-      ], avgPrice: 1026, volume: 32
-    },
-    "コンピュートロニック基材": {
-      module: "コンピュートロニック基材の製造", outputRate: 588, inputs: [
-        { ware: "エネルギーセル", rate: 24000 },
-        { ware: "水素", rate: 12000 },
-        { ware: "鉱石", rate: 18000 },
-        { ware: "シリコン", rate: 18000 },
-      ], build: [
-        { ware: "コンピュートロニック基材", amount: 238 },
-        { ware: "エネルギーセル", amount: 688 },
-        { ware: "炭化ケイ素", amount: 155 },
-      ], avgPrice: 8280, volume: 50
-    },
-    "マイクロラティス": {
-      module: "マイクロラティスの製造", outputRate: 3800, inputs: [
-        { ware: "エネルギーセル", rate: 1000 },
-        { ware: "ヘリウム", rate: 2600 },
-        { ware: "鉱石", rate: 1000 },
-      ], build: [
-        { ware: "コンピュートロニック基材", amount: 6 },
-        { ware: "エネルギーセル", amount: 18 },
-        { ware: "炭化ケイ素", amount: 4 },
-      ]
-    },
-    "炭化ケイ素": {
-      module: "炭化ケイ素の製造", outputRate: 576, inputs: [
-        { ware: "エネルギーセル", rate: 2400 },
-        { ware: "マイクロラティス", rate: 24 },
-        { ware: "メタン", rate: 4800 },
-        { ware: "シリコン", rate: 3600 },
-      ], build:[
-        { ware: "コンピュートロニック基材", amount: 40 },
-        { ware: "エネルギーセル", amount: 117 },
-        { ware: "炭化ケイ素", amount: 26 },
-      ], avgPrice: 1414, volume: 20
-    },
-    "高度電子機器": {
-      module: "高度電子機器の製造", outputRate: 270, inputs: [
-        { ware: "エネルギーセル", rate: 300 },
-        { ware: "マイクロチップ", rate: 220 },
-        { ware: "量子チューブ", rate: 100 },
-      ], build:[
-        { ware: "クレイトロニクス", amount: 482 },
-        { ware: "エネルギーセル", amount: 965 },
-        { ware: "船体部品", amount: 1767 },
-      ], avgPrice: 1014, volume: 30
-    },
-    "フィールドコイル": {
-      module: "フィールドコイルの製造", outputRate: 1050, inputs: [
-        { ware: "エネルギーセル", rate: 360 },
-        { ware: "プラズマ伝導体", rate: 240 },
-        { ware: "量子チューブ", rate: 258 },
-      ], avgPrice: 412, volume: 15
-    },
-    "武器部品": {
-      module: "武器部品の製造", outputRate: 340, inputs: [
-        { ware: "エネルギーセル", rate: 120 },
-        { ware: "船体部品", rate: 40 },
-        { ware: "プラズマ伝導体", rate: 60 },
-      ], avgPrice: 285, volume: 20
-    },
-    "タレット部品": {
-      module: "タレット部品の製造", outputRate: 340, inputs: [
-        { ware: "エネルギーセル", rate: 120 },
-        { ware: "マイクロチップ", rate: 40 },
-        { ware: "量子チューブ", rate: 40 },
-        { ware: "スキャンアレイ", rate: 20 },
-      ], avgPrice: 273, volume: 20
-    },
-    "ミサイル部品": {
-      module: "ミサイル部品", outputRate: 1124, inputs: [
-        { ware: "エネルギーセル", rate: 80 },
-        { ware: "船体部品", rate: 8 },
-        { ware: "高度化合物", rate: 8 },
-      ]
-    },
-    "エンジン部品": {
-      module: "エンジン部品の製造", outputRate: 832, inputs: [
-        { ware: "エネルギーセル", rate: 240 },
-        { ware: "反物質セル", rate: 320 },
-        { ware: "製錬金属", rate: 384 },
-      ], avgPrice: 182, volume: 15
-    },
-    "スキャンアレイ": {
-      module: "スキャンアレイの製造", outputRate: 216, inputs: [
-        { ware: "エネルギーセル", rate: 360 },
-        { ware: "製錬金属", rate: 600 },
-        { ware: "シリコンウェハー", rate: 360 },
-      ], avgPrice: 1053, volume: 38
-    },
-    "スマートチップ": {
-      module: "スマートチップの製造", outputRate: 858, inputs: [
-        { ware: "エネルギーセル", rate: 300 },
-        { ware: "シリコンウェハー", rate: 120 },
-      ], avgPrice: 57, volume: 2
-    },
-    "高度化合物": {
-      module: "高度化合物の製造", outputRate: 648, inputs: [
-        { ware: "エネルギーセル", rate: 600 },
-        { ware: "グラフェン", rate: 960 },
-        { ware: "製錬金属", rate: 960 },
-      ], build:[
-        { ware: "クレイトロニクス", amount: 648 },
-        { ware: "エネルギーセル", amount: 1296 },
-        { ware: "船体部品", amount: 2373 },
-      ], avgPrice: 540, volume: 32
-    },
-    "小麦": {
-      module: "小麦の製造", outputRate: 3720, inputs: [
-        { ware: "エネルギーセル", rate: 720 },
-        { ware: "水", rate: 960 },
-      ], build:[
-        { ware: "クレイトロニクス", amount: 296 },
-        { ware: "エネルギーセル", amount: 592 },
-        { ware: "船体部品", amount: 1084 },
-      ], avgPrice: 31, volume: 4
-    },
-    "糧食": {
-      module: "糧食の製造", outputRate: 6900, inputs: [
-        { ware: "エネルギーセル", rate: 1500 },
-        { ware: "食肉", rate: 600 },
-        { ware: "香辛料", rate: 600 },
-        { ware: "小麦", rate: 600 },
-      ], build:[
-        { ware: "クレイトロニクス", amount: 262 },
-        { ware: "エネルギーセル", amount: 525 },
-        { ware: "船体部品", amount: 961 },
-      ], avgPrice: 21, volume: 1
-    },
-    "食肉": {
-      module: "食肉の製造", outputRate: 2320, inputs: [
-        { ware: "エネルギーセル", rate: 640 },
-        { ware: "水", rate: 800 },
-      ], build:[
-        { ware: "クレイトロニクス", amount: 248 },
-        { ware: "エネルギーセル", amount: 497 },
-        { ware: "船体部品", amount: 910 },
-      ], avgPrice: 48, volume: 6
-    },
-    "香辛料": {
-      module: "香辛料の製造", outputRate: 3000, inputs: [
-        { ware: "エネルギーセル", rate: 240 },
-        { ware: "水", rate: 480 },
-      ], build:[
-        { ware: "クレイトロニクス", amount: 139 },
-        { ware: "エネルギーセル", amount: 278 },
-        { ware: "船体部品", amount: 510 },
-      ], avgPrice: 20, volume: 3
-    },
-    "プロテインペースト": {
-      module: "プロテインペーストの製造", outputRate: 2628, inputs: [
-        { ware: "エネルギーセル", rate: 960 },
-        { ware: "氷", rate: 960 },
-        { ware: "メタン", rate: 2400 },
-      ], build:[
-        { ware: "エネルギーセル", amount: 211 },
-        { ware: "コンピュートロニック基材", amount: 73 },
-        { ware: "炭化ケイ素", amount: 47 },
-      ], avgPrice: 96, volume: 4 
-    },
-    "テランMRE": {
-      module: "テランMREの製造", outputRate: 2625, inputs: [
-        { ware: "エネルギーセル", rate: 900 },
-        { ware: "プロテインペースト", rate: 900 },
-      ], build:[
-        { ware: "エネルギーセル", amount: 89 },
-        { ware: "コンピュートロニック基材", amount: 30 },
-        { ware: "炭化ケイ素", amount: 20 },
-      ], avgPrice: 54, volume: 2 
-    },
-    "アルゴン医療品": {
-      module: "アルゴン医療品の製造", outputRate: 2496, inputs: [
-        { ware: "エネルギーセル", rate: 1200 },
-        { ware: "香辛料", rate: 480 },
-        { ware: "水", rate: 720 },
-        { ware: "小麦", rate: 360 },
-      ], build:[
-        { ware: "クレイトロニクス", amount: 225 },
-        { ware: "エネルギーセル", amount: 450 },
-        { ware: "船体部品", amount: 823 },
-      ], avgPrice: 66, volume: 2 
-    },
-  };
+    //============ default seed (user's image data, Energy Cells deduplicated) ============
+    // build: 任意。生産モジュール「1基」を建設するのに必要な建設素材リスト。
+    //   形式: build:[ {ware:"<素材名>", amount:<個数>}, ... ]  ※ amount は per-hour ではなく一回限りの個数
+    //   inputs(毎時消費)とは別物なので混ぜない。未記載ウェアは下の正規化で build:[] 扱い。
+    //   例) "クレイトロニクス": { ..., build:[ {ware:"船体部品",amount:330}, {ware:"クレイトロニクス",amount:115} ] }
+    const SEED = {
+        水素: {
+            avgPrice: 58,
+            volume: 6,
+        },
+        メタン: {
+            avgPrice: 48,
+            volume: 6,
+        },
+        ヘリウム: {
+            avgPrice: 44,
+            volume: 6,
+        },
+        氷: {
+            avgPrice: 30,
+            volume: 8,
+        },
+        鉱石: {
+            avgPrice: 50,
+            volume: 10,
+        },
+        シリコン: {
+            avgPrice: 130,
+            volume: 10,
+        },
+        ニヴィディウム: {
+            avgPrice: 510,
+            volume: 10,
+        },
+        エネルギーセル: {
+            module: "エネルギーセルの製造",
+            outputRate: 10500,
+            inputs: [],
+            build: [
+                { ware: "クレイトロニクス", amount: 260 },
+                { ware: "エネルギーセル", amount: 520 },
+                { ware: "船体部品", amount: 951 },
+            ],
+            avgPrice: 16,
+            volume: 1,
+        },
+        クレイトロニクス: {
+            module: "クレイトロニクスの製造",
+            outputRate: 432,
+            inputs: [
+                { ware: "エネルギーセル", rate: 560 },
+                { ware: "反物質セル", rate: 400 },
+                { ware: "マイクロチップ", rate: 640 },
+                { ware: "量子チューブ", rate: 400 },
+            ],
+            build: [
+                { ware: "高度化合物", amount: 5630 },
+                { ware: "エネルギーセル", amount: 6571 },
+                { ware: "プラズマ伝導体", amount: 4737 },
+            ],
+            avgPrice: 2040,
+            volume: 24,
+        },
+        グラフェン: {
+            module: "グラフェンの製造",
+            outputRate: 1440,
+            inputs: [
+                { ware: "エネルギーセル", rate: 1200 },
+                { ware: "メタン", rate: 4800 },
+            ],
+            build: [
+                { ware: "クレイトロニクス", amount: 28 },
+                { ware: "エネルギーセル", amount: 57 },
+                { ware: "船体部品", amount: 104 },
+            ],
+            avgPrice: 166,
+            volume: 20,
+        },
+        製錬金属: {
+            module: "製錬金属の製造",
+            outputRate: 2112,
+            inputs: [
+                { ware: "エネルギーセル", rate: 2160 },
+                { ware: "鉱石", rate: 5760 },
+            ],
+            build: [
+                { ware: "クレイトロニクス", amount: 36 },
+                { ware: "エネルギーセル", amount: 73 },
+                { ware: "船体部品", amount: 135 },
+            ],
+            avgPrice: 148,
+            volume: 14,
+        },
+        シリコンウェハー: {
+            module: "シリコンウェハーの製造",
+            outputRate: 2140,
+            inputs: [
+                { ware: "エネルギーセル", rate: 1800 },
+                { ware: "シリコン", rate: 4800 },
+            ],
+            build: [
+                { ware: "クレイトロニクス", amount: 74 },
+                { ware: "エネルギーセル", amount: 149 },
+                { ware: "船体部品", amount: 273 },
+            ],
+            avgPrice: 299,
+            volume: 18,
+        },
+        船体部品: {
+            module: "船体部品の製造",
+            outputRate: 1176,
+            inputs: [
+                { ware: "エネルギーセル", rate: 320 },
+                { ware: "グラフェン", rate: 160 },
+                { ware: "製錬金属", rate: 1120 },
+            ],
+            build: [
+                { ware: "高度化合物", amount: 853 },
+                { ware: "エネルギーセル", amount: 1357 },
+                { ware: "プラズマ伝導体", amount: 1228 },
+            ],
+            avgPrice: 209,
+            volume: 12,
+        },
+        マイクロチップ: {
+            module: "マイクロチップの製造",
+            outputRate: 432,
+            inputs: [
+                { ware: "エネルギーセル", rate: 300 },
+                { ware: "シリコンウェハー", rate: 1200 },
+            ],
+            build: [
+                { ware: "クレイトロニクス", amount: 758 },
+                { ware: "エネルギーセル", amount: 1516 },
+                { ware: "船体部品", amount: 2774 },
+            ],
+            avgPrice: 948,
+            volume: 22,
+        },
+        量子チューブ: {
+            module: "量子チューブの製造",
+            outputRate: 470,
+            inputs: [
+                { ware: "エネルギーセル", rate: 200 },
+                { ware: "グラフェン", rate: 580 },
+                { ware: "超流動冷媒", rate: 150 },
+            ],
+            avgPrice: 300,
+            volume: 22,
+        },
+        反物質セル: {
+            module: "反物質セルの製造",
+            outputRate: 2970,
+            inputs: [
+                { ware: "エネルギーセル", rate: 3000 },
+                { ware: "水素", rate: 9600 },
+            ],
+            avgPrice: 202,
+            volume: 18,
+        },
+        反物質コンバーター: {
+            module: "反物質コンバーターの製造",
+            outputRate: 1596,
+            inputs: [
+                { ware: "エネルギーセル", rate: 960 },
+                { ware: "高度化合物", rate: 240 },
+                { ware: "マイクロチップ", rate: 360 },
+            ],
+            avgPrice: 354,
+            volume: 10,
+        },
+        水: {
+            module: "水の製造",
+            outputRate: 5790,
+            inputs: [
+                { ware: "エネルギーセル", rate: 1800 },
+                { ware: "氷", rate: 9600 },
+            ],
+            build: [
+                { ware: "クレイトロニクス", amount: 36 },
+                { ware: "エネルギーセル", amount: 72 },
+                { ware: "船体部品", amount: 132 },
+            ],
+            avgPrice: 53,
+            volume: 6,
+        },
+        ボーガス: {
+            module: "ボーガスの製造",
+            outputRate: 110,
+            inputs: [
+                { ware: "エネルギーセル", rate: 40 },
+                { ware: "水", rate: 100 },
+            ],
+        },
+        プランクトン: {
+            module: "プランクトンの製造",
+            outputRate: 275,
+            inputs: [
+                { ware: "エネルギーセル", rate: 20 },
+                { ware: "水", rate: 50 },
+            ],
+        },
+        ボウフ: {
+            module: "ボウフの製造",
+            outputRate: 82,
+            inputs: [
+                { ware: "エネルギーセル", rate: 40 },
+                { ware: "ボーガス", rate: 40 },
+                { ware: "プランクトン", rate: 120 },
+            ],
+            avgPrice: 101,
+            volume: 4,
+        },
+        ボロン医療品: {
+            module: "ボロン医療品の製造",
+            outputRate: 208,
+            inputs: [
+                { ware: "エネルギーセル", rate: 100 },
+                { ware: "水", rate: 60 },
+                { ware: "プランクトン", rate: 95 },
+            ],
+            avgPrice: 66,
+            volume: 2,
+        },
+        超流動冷媒: {
+            module: "超流動冷媒の製造",
+            outputRate: 1425,
+            inputs: [
+                { ware: "エネルギーセル", rate: 900 },
+                { ware: "ヘリウム", rate: 4800 },
+            ],
+            avgPrice: 150,
+            volume: 16,
+        },
+        プラズマ伝導体: {
+            module: "プラズマ伝導体の製造",
+            outputRate: 176,
+            inputs: [
+                { ware: "エネルギーセル", rate: 240 },
+                { ware: "グラフェン", rate: 384 },
+                { ware: "超流動冷媒", rate: 560 },
+            ],
+            build: [
+                { ware: "クレイトロニクス", amount: 473 },
+                { ware: "エネルギーセル", amount: 946 },
+                { ware: "船体部品", amount: 1732 },
+            ],
+            avgPrice: 1026,
+            volume: 32,
+        },
+        コンピュートロニック基材: {
+            module: "コンピュートロニック基材の製造",
+            outputRate: 588,
+            inputs: [
+                { ware: "エネルギーセル", rate: 24000 },
+                { ware: "水素", rate: 12000 },
+                { ware: "鉱石", rate: 18000 },
+                { ware: "シリコン", rate: 18000 },
+            ],
+            build: [
+                { ware: "コンピュートロニック基材", amount: 238 },
+                { ware: "エネルギーセル", amount: 688 },
+                { ware: "炭化ケイ素", amount: 155 },
+            ],
+            avgPrice: 8280,
+            volume: 50,
+        },
+        マイクロラティス: {
+            module: "マイクロラティスの製造",
+            outputRate: 3800,
+            inputs: [
+                { ware: "エネルギーセル", rate: 1000 },
+                { ware: "ヘリウム", rate: 2600 },
+                { ware: "鉱石", rate: 1000 },
+            ],
+            build: [
+                { ware: "コンピュートロニック基材", amount: 6 },
+                { ware: "エネルギーセル", amount: 18 },
+                { ware: "炭化ケイ素", amount: 4 },
+            ],
+        },
+        炭化ケイ素: {
+            module: "炭化ケイ素の製造",
+            outputRate: 576,
+            inputs: [
+                { ware: "エネルギーセル", rate: 2400 },
+                { ware: "マイクロラティス", rate: 24 },
+                { ware: "メタン", rate: 4800 },
+                { ware: "シリコン", rate: 3600 },
+            ],
+            build: [
+                { ware: "コンピュートロニック基材", amount: 40 },
+                { ware: "エネルギーセル", amount: 117 },
+                { ware: "炭化ケイ素", amount: 26 },
+            ],
+            avgPrice: 1414,
+            volume: 20,
+        },
+        高度電子機器: {
+            module: "高度電子機器の製造",
+            outputRate: 270,
+            inputs: [
+                { ware: "エネルギーセル", rate: 300 },
+                { ware: "マイクロチップ", rate: 220 },
+                { ware: "量子チューブ", rate: 100 },
+            ],
+            build: [
+                { ware: "クレイトロニクス", amount: 482 },
+                { ware: "エネルギーセル", amount: 965 },
+                { ware: "船体部品", amount: 1767 },
+            ],
+            avgPrice: 1014,
+            volume: 30,
+        },
+        フィールドコイル: {
+            module: "フィールドコイルの製造",
+            outputRate: 1050,
+            inputs: [
+                { ware: "エネルギーセル", rate: 360 },
+                { ware: "プラズマ伝導体", rate: 240 },
+                { ware: "量子チューブ", rate: 258 },
+            ],
+            avgPrice: 412,
+            volume: 15,
+        },
+        武器部品: {
+            module: "武器部品の製造",
+            outputRate: 340,
+            inputs: [
+                { ware: "エネルギーセル", rate: 120 },
+                { ware: "船体部品", rate: 40 },
+                { ware: "プラズマ伝導体", rate: 60 },
+            ],
+            avgPrice: 285,
+            volume: 20,
+        },
+        タレット部品: {
+            module: "タレット部品の製造",
+            outputRate: 340,
+            inputs: [
+                { ware: "エネルギーセル", rate: 120 },
+                { ware: "マイクロチップ", rate: 40 },
+                { ware: "量子チューブ", rate: 40 },
+                { ware: "スキャンアレイ", rate: 20 },
+            ],
+            avgPrice: 273,
+            volume: 20,
+        },
+        ミサイル部品: {
+            module: "ミサイル部品",
+            outputRate: 1124,
+            inputs: [
+                { ware: "エネルギーセル", rate: 80 },
+                { ware: "船体部品", rate: 8 },
+                { ware: "高度化合物", rate: 8 },
+            ],
+        },
+        エンジン部品: {
+            module: "エンジン部品の製造",
+            outputRate: 832,
+            inputs: [
+                { ware: "エネルギーセル", rate: 240 },
+                { ware: "反物質セル", rate: 320 },
+                { ware: "製錬金属", rate: 384 },
+            ],
+            avgPrice: 182,
+            volume: 15,
+        },
+        スキャンアレイ: {
+            module: "スキャンアレイの製造",
+            outputRate: 216,
+            inputs: [
+                { ware: "エネルギーセル", rate: 360 },
+                { ware: "製錬金属", rate: 600 },
+                { ware: "シリコンウェハー", rate: 360 },
+            ],
+            avgPrice: 1053,
+            volume: 38,
+        },
+        スマートチップ: {
+            module: "スマートチップの製造",
+            outputRate: 858,
+            inputs: [
+                { ware: "エネルギーセル", rate: 300 },
+                { ware: "シリコンウェハー", rate: 120 },
+            ],
+            avgPrice: 57,
+            volume: 2,
+        },
+        高度化合物: {
+            module: "高度化合物の製造",
+            outputRate: 648,
+            inputs: [
+                { ware: "エネルギーセル", rate: 600 },
+                { ware: "グラフェン", rate: 960 },
+                { ware: "製錬金属", rate: 960 },
+            ],
+            build: [
+                { ware: "クレイトロニクス", amount: 648 },
+                { ware: "エネルギーセル", amount: 1296 },
+                { ware: "船体部品", amount: 2373 },
+            ],
+            avgPrice: 540,
+            volume: 32,
+        },
+        小麦: {
+            module: "小麦の製造",
+            outputRate: 3720,
+            inputs: [
+                { ware: "エネルギーセル", rate: 720 },
+                { ware: "水", rate: 960 },
+            ],
+            build: [
+                { ware: "クレイトロニクス", amount: 296 },
+                { ware: "エネルギーセル", amount: 592 },
+                { ware: "船体部品", amount: 1084 },
+            ],
+            avgPrice: 31,
+            volume: 4,
+        },
+        糧食: {
+            module: "糧食の製造",
+            outputRate: 6900,
+            inputs: [
+                { ware: "エネルギーセル", rate: 1500 },
+                { ware: "食肉", rate: 600 },
+                { ware: "香辛料", rate: 600 },
+                { ware: "小麦", rate: 600 },
+            ],
+            build: [
+                { ware: "クレイトロニクス", amount: 262 },
+                { ware: "エネルギーセル", amount: 525 },
+                { ware: "船体部品", amount: 961 },
+            ],
+            avgPrice: 21,
+            volume: 1,
+        },
+        食肉: {
+            module: "食肉の製造",
+            outputRate: 2320,
+            inputs: [
+                { ware: "エネルギーセル", rate: 640 },
+                { ware: "水", rate: 800 },
+            ],
+            build: [
+                { ware: "クレイトロニクス", amount: 248 },
+                { ware: "エネルギーセル", amount: 497 },
+                { ware: "船体部品", amount: 910 },
+            ],
+            avgPrice: 48,
+            volume: 6,
+        },
+        香辛料: {
+            module: "香辛料の製造",
+            outputRate: 3000,
+            inputs: [
+                { ware: "エネルギーセル", rate: 240 },
+                { ware: "水", rate: 480 },
+            ],
+            build: [
+                { ware: "クレイトロニクス", amount: 139 },
+                { ware: "エネルギーセル", amount: 278 },
+                { ware: "船体部品", amount: 510 },
+            ],
+            avgPrice: 20,
+            volume: 3,
+        },
+        プロテインペースト: {
+            module: "プロテインペーストの製造",
+            outputRate: 2628,
+            inputs: [
+                { ware: "エネルギーセル", rate: 960 },
+                { ware: "氷", rate: 960 },
+                { ware: "メタン", rate: 2400 },
+            ],
+            build: [
+                { ware: "エネルギーセル", amount: 211 },
+                { ware: "コンピュートロニック基材", amount: 73 },
+                { ware: "炭化ケイ素", amount: 47 },
+            ],
+            avgPrice: 96,
+            volume: 4,
+        },
+        テランMRE: {
+            module: "テランMREの製造",
+            outputRate: 2625,
+            inputs: [
+                { ware: "エネルギーセル", rate: 900 },
+                { ware: "プロテインペースト", rate: 900 },
+            ],
+            build: [
+                { ware: "エネルギーセル", amount: 89 },
+                { ware: "コンピュートロニック基材", amount: 30 },
+                { ware: "炭化ケイ素", amount: 20 },
+            ],
+            avgPrice: 54,
+            volume: 2,
+        },
+        アルゴン医療品: {
+            module: "アルゴン医療品の製造",
+            outputRate: 2496,
+            inputs: [
+                { ware: "エネルギーセル", rate: 1200 },
+                { ware: "香辛料", rate: 480 },
+                { ware: "水", rate: 720 },
+                { ware: "小麦", rate: 360 },
+            ],
+            build: [
+                { ware: "クレイトロニクス", amount: 225 },
+                { ware: "エネルギーセル", amount: 450 },
+                { ware: "船体部品", amount: 823 },
+            ],
+            avgPrice: 66,
+            volume: 2,
+        },
+    };
 
-// SEED is the single source of truth. No persistence; recipes are edited in code.
-const DB = SEED;
-// build (建設素材) の受け皿: 未記載ウェアを空配列で正規化し、以降は r.build を無条件参照できるようにする
-Object.values(DB).forEach(r=>{ if(!r.build) r.build=[]; });
-// レシピ判定: outputRate と inputs を持つものだけが「生産ウェア」。
-//   avgPrice/volume だけの DB エントリ (採掘・購入素材の価格データ) は RAW 扱いにする。
-const hasRecipe = rec => !!(rec && rec.outputRate!=null && Array.isArray(rec.inputs));
+    //============ セクター資源シード (SEED と同じくコード直接編集が唯一のソース) ============
+    // 形式: { sector:"<セクター名>", owner:"<勢力略称>", res:{ <資源名>:<数値> }, note:"<備考>" }
+    //   owner: 英語略称で記載。省略 or 空文字 = 無所属セクター (「無所属」と表示)。
+    //     ARG=アルゴン連邦 / ANT=アンティゴネ共和国 / HAT=ハティクヴァ自由同盟 /
+    //     PAR=パラニド神聖帝国 / HOP=ポンティフェクス聖教国 / TEL=テラディ社 / MIN=財務省 /
+    //     ZYA=ザース家父長国 / FRF=自由家門 / TER=地球防衛府 / PIO=セガリスパイオニア /
+    //     BOR=ボロン王国 / VIG=ヴィゴル・シンジケート / RIP=リップタイド・レイカーズ / XEN=ゼノン
+    //   res の値: 数値 = 実測した資源量(yield) / 0 = その資源なし / 省略 = 未調査 (— 表示)
+    //   v9.0 は採掘地域制のため公開ソースの数値が当てにならない。ゲーム内で実測した値を記入する。
+    // 資源列は SECTOR_RESOURCES の順で表示される。列を増やす場合はここに資源名を追加する。
+    const SECTOR_RESOURCES = [
+        "鉱石",
+        "シリコン",
+        "氷",
+        "ニヴィディウム",
+        "水素",
+        "ヘリウム",
+        "メタン",
+    ];
+    const SECTORS = [
+        // 記入例 (数値は未調査のため全て省略 = "—" 表示。実測したら数値で埋める):
+        {
+            sector: "アルゴンプライム",
+            owner: "ARG",
+            res: {},
+            note: "",
+        },
+        {
+            sector: "イアナムスズラⅣ",
+            owner: "TEL",
+            res: {},
+            note: "",
+        },
+    ];
 
-//============ solver: recursive BOM explosion + shared-input aggregation ============
-// targets: [{ware, rate}, ...] — 複数目標の需要を合算してから上流へ伝播する
-function solve(targets){
-  const demand={}; const onPath=new Set(); let cycle=null;
-  function add(ware,rate){
-    demand[ware]=(demand[ware]||0)+rate;
-    const rec=DB[ware]; if(!hasRecipe(rec)) return;   // レシピ無し (RAW / 価格のみ) は葉
-    if(onPath.has(ware)){cycle=ware;return;}
-    onPath.add(ware);
-    const mods=rate/rec.outputRate;
-    rec.inputs.forEach(i=>add(i.ware, mods*i.rate));
-    onPath.delete(ware);
-  }
-  targets.forEach(t=>add(t.ware,t.rate));
-
-  const produced=[], raw=[];
-  Object.keys(demand).forEach(w=>{
-    const rec=DB[w];
-    if(hasRecipe(rec)){ const ex=demand[w]/rec.outputRate;
-      produced.push({ware:w,module:rec.module||w,rate:demand[w],out:rec.outputRate,modsExact:ex,mods:Math.ceil(ex)});
-    } else raw.push({ware:w,rate:demand[w]});
-  });
-  produced.sort((a,b)=>b.rate-a.rate); raw.sort((a,b)=>b.rate-a.rate);
-  return {demand,produced,raw,cycle};
-}
-// build explicit cascade tree (shows where consumption comes from)
-function buildTree(ware,rate,depth){
-  const rec=DB[ware]; const recipe=hasRecipe(rec);
-  const node={ware,rate,raw:!recipe,mods:recipe?rate/rec.outputRate:null,children:[]};
-  if(recipe && depth<12){
-    const m=rate/rec.outputRate;
-    rec.inputs.forEach(i=>node.children.push(buildTree(i.ware,m*i.rate,depth+1)));
-  }
-  return node;
-}
-
-//============ render helpers ============
-const $=s=>document.querySelector(s);
-const fmt=n=>{ if(n>=100)return Math.round(n).toLocaleString();
-  return (Math.round(n*10)/10).toLocaleString(undefined,{maximumFractionDigits:1}); };
-
-// 目標行を1つ生成して #targetList に追加する
-function addTargetRow(ware, mods){
-  const row=document.createElement("div");
-  row.className="target-row";
-  row.innerHTML=
-    `<div class="f f-ware"><label>生産ウェア</label><select class="t-ware" style="width:100%"></select></div>`+
-    `<div class="f f-mods"><label>モジュール数</label><input type="number" class="t-mods" value="${mods!=null?mods:1}" min="0" step="1"></div>`+
-    `<button class="btn-sm btn-danger t-remove" title="この目標を削除" aria-label="この目標を削除">✕</button>`;
-  const sel=row.querySelector(".t-ware");
-  // 目標に選べるのは生産ウェアのみ (採掘・購入素材は除外)
-  Object.keys(DB).filter(w=>hasRecipe(DB[w])).forEach(w=>{ const o=document.createElement("option");o.value=w;o.textContent=w;sel.appendChild(o); });
-  if(ware && DB[ware]) sel.value=ware;
-  $("#targetList").appendChild(row);
-  return row;
-}
-
-// 現在の入力から有効な目標(モジュール数>0)の一覧を取得する
-function readTargets(){
-  return [...document.querySelectorAll("#targetList .target-row")].map(row=>{
-    const ware=row.querySelector(".t-ware").value;
-    const mods=parseFloat(row.querySelector(".t-mods").value)||0;
-    const rate=mods*(hasRecipe(DB[ware])?DB[ware].outputRate:0);
-    return {ware,mods,rate};
-  }).filter(t=>t.ware && t.rate>0);
-}
-
-function renderTree(node){
-  const isRaw=node.raw;
-  let html=`<div class="tnode"><div class="row">`+
-    `<span class="tw ${isRaw?'raw':'prod'}">${node.ware}</span>`+
-    `<span class="trate">${fmt(node.rate)}/h</span>`+
-    (isRaw?`<span class="tag-raw" style="margin-left:6px">採掘/購入</span>`
-          :`<span class="tmod">×${node.mods.toFixed(2)} mod</span>`)+
-    `</div>`;
-  if(node.children.length){
-    html+=`<div class="children">`+node.children.map(renderTree).join("")+`</div>`;
-  }
-  return html+`</div>`;
-}
-
-function runSolve(){
-  const targets=readTargets();
-  if(!targets.length){ $("#results").style.display="none"; return; }
-  const res=solve(targets);
-  $("#results").style.display="block";
-
-  const totalMods=res.produced.reduce((s,p)=>s+p.mods,0);
-  const targetLabel = targets.length===1 ? targets[0].ware : `${targets.length} 種`;
-  const targetSub = targets.map(t=>`${t.ware}×${t.mods}`).join(" / ");
-
-  // 売上/h = 目標ウェアを全量売却した場合の収入 (avgPrice 記載分のみ)
-  const pricedTargets = targets.filter(t=>{const r=DB[t.ware]; return r && r.avgPrice!=null;});
-  const targetIncome = pricedTargets.reduce((s,t)=>s + t.rate*DB[t.ware].avgPrice, 0);
-  const incomeSub = pricedTargets.length
-    ? `${pricedTargets.length}/${targets.length} 種が価格記載`
-    : "価格データなし";
-
-  // 建設素材総量 = Σ (各モジュールの必要基数(切り上げ) × 1基あたり建設素材)。建てるのは整数基なので mods を使う。
-  const buildTotals={};
-  res.produced.forEach(p=>{
-    DB[p.ware].build.forEach(b=>{ buildTotals[b.ware]=(buildTotals[b.ware]||0)+b.amount*p.mods; });
-  });
-  const buildRows=Object.keys(buildTotals).sort((a,b)=>a.localeCompare(b,"ja"));
-  // 価格記載のある素材だけ合算。未記載素材があれば概算であることを注記する。
-  const buildPriced=buildRows.filter(w=>DB[w]&&DB[w].avgPrice!=null);
-  const buildCost=buildPriced.reduce((s,w)=>s+buildTotals[w]*DB[w].avgPrice, 0);
-  const buildCostSub=buildRows.length
-    ? (buildPriced.length===buildRows.length ? `${buildRows.length} 種の素材` : `${buildPriced.length}/${buildRows.length} 種が価格記載`)
-    : "建設データなし";
-
-  // 採掘・購入材料の調達費用/h = Σ 必要量/h × avgPrice (価格記載分のみ)
-  const rawPriced=res.raw.filter(x=>DB[x.ware]&&DB[x.ware].avgPrice!=null);
-  const rawCost=rawPriced.reduce((s,x)=>s+x.rate*DB[x.ware].avgPrice, 0);
-  const rawCostSub=res.raw.length
-    ? (rawPriced.length===res.raw.length ? `${res.raw.length} 種` : `${rawPriced.length}/${res.raw.length} 種が価格記載`)
-    : "材料なし";
-
-  $("#statCards").innerHTML=
-    card("目標", targetLabel, "cyan", targetSub)+
-    card("売上 / h", `${fmt(targetIncome)} Cr`, "cyan", incomeSub)+
-    card("総生産モジュール", totalMods, "", `${res.produced.length} 種`)+
-    card("建設費用 (概算)", `${fmt(buildCost)} Cr`, "amber", buildCostSub)+
-    card("材料費 / h", `${fmt(rawCost)} Cr`, "amber", rawCostSub)+
-    (res.cycle?card("⚠ 循環検出","",'amber',res.cycle):"");
-
-  $("#tree").innerHTML=targets.map(t=>
-    `<div class="tree-target"><div class="tree-head">${t.ware}`+
-    `<span class="trate">×${t.mods} mod ▸ ${fmt(t.rate)}/h</span></div>`+
-    renderTree(buildTree(t.ware,t.rate,0))+`</div>`).join("");
-
-  $("#rawTable").innerHTML=`<tr><th>材料</th><th class="r">必要量/h</th><th class="r">単価 (Cr)</th><th class="r">費用/h (Cr)</th></tr>`+
-    (res.raw.length?res.raw.map(x=>{
-        const pr=DB[x.ware]&&DB[x.ware].avgPrice;
-        return `<tr><td class="amber">${x.ware}</td><td class="r num">${fmt(x.rate)}</td>`+
-          `<td class="r num muted">${pr!=null?fmt(pr):"—"}</td>`+
-          `<td class="r num" style="color:var(--amber);font-weight:600">${pr!=null?fmt(x.rate*pr):"—"}</td></tr>`;
-      }).join("")+
-      `<tr><td class="muted" colspan="3">合計 (価格記載分)</td>`+
-      `<td class="r num" style="color:var(--amber);font-weight:700">${fmt(rawCost)}</td></tr>`
-     :`<tr><td colspan="4" class="empty">なし</td></tr>`);
-
-  // 各生産モジュールの建設費用 = 必要基数(切り上げ mods) × 1基あたり建設素材 × 単価 (価格記載分のみ)。
-  // 全モジュールの合算は上の buildCost と一致する。
-  $("#modTable").innerHTML=`<tr><th>生産モジュール</th><th class="r">必要量/h</th><th class="r">1基あたり/h</th><th class="r">必要基数 (実数)</th><th class="r">建設費用 (Cr)</th></tr>`+
-    res.produced.map(p=>{
-      const bp=DB[p.ware].build.filter(b=>DB[b.ware]&&DB[b.ware].avgPrice!=null);
-      const allPriced=DB[p.ware].build.length>0 && bp.length===DB[p.ware].build.length;
-      const cost=bp.reduce((s,b)=>s+b.amount*p.mods*DB[b.ware].avgPrice, 0);
-      const costCell=DB[p.ware].build.length
-        ? `${fmt(cost)}${allPriced?"":" *"}`
-        : "—";
-      return `<tr><td class="cyan">${p.module}</td><td class="r num">${fmt(p.rate)}</td>`+
-        `<td class="r num muted">${fmt(p.out)}</td>`+
-        `<td class="r num" style="color:var(--cyan);font-weight:600">${p.modsExact.toFixed(2)}</td>`+
-        `<td class="r num" style="color:var(--amber);font-weight:600">${costCell}</td></tr>`;
-    }).join("")+
-    `<tr><td class="muted" colspan="4">合計建設費用 (価格記載分)</td>`+
-    `<td class="r num" style="color:var(--amber);font-weight:700">${fmt(buildCost)}</td></tr>`;
-
-  // 建設素材テーブル (集計は上のサマリー計算で済んでいる buildTotals / buildRows / buildCost を再利用)
-  $("#buildTable").innerHTML=`<tr><th>建設素材</th><th class="r">必要総量</th><th class="r">単価 (Cr)</th><th class="r">費用 (Cr)</th></tr>`+
-    (buildRows.length?buildRows.map(w=>{
-        const pr=DB[w]&&DB[w].avgPrice;
-        return `<tr><td class="cyan">${w}</td><td class="r num">${fmt(buildTotals[w])}</td>`+
-          `<td class="r num muted">${pr!=null?fmt(pr):"—"}</td>`+
-          `<td class="r num" style="color:var(--amber);font-weight:600">${pr!=null?fmt(buildTotals[w]*pr):"—"}</td></tr>`;
-      }).join("")+
-      `<tr><td class="muted" colspan="3">合計 (価格記載分)</td>`+
-      `<td class="r num" style="color:var(--amber);font-weight:700">${fmt(buildCost)}</td></tr>`
-     :`<tr><td colspan="4" class="empty">建設素材データなし (SEED の build を記載)</td></tr>`);
-}
-function card(k,val,cls,sub){
-  return `<div class="stat"><div class="k">${k}</div>`+
-    `<div class="val ${cls||''}">${val}</div>`+
-    (sub?`<div class="k" style="margin-top:2px">${sub}</div>`:"")+`</div>`;
-}
-
-//============ 収益性テーブル: SEED で avgPrice/volume 両方を記載した全ウェア (目標と独立・列ソート可) ============
-const ECO_ROWS = Object.keys(DB)
-  .filter(w=>DB[w].avgPrice!=null && DB[w].volume!=null)
-  .map(w=>{const r=DB[w]; const prod=hasRecipe(r);   // RAW (採掘・購入素材) は生産量/価値/h を持たない
-    return {ware:w, price:r.avgPrice, vol:r.volume, valPerVol:r.avgPrice/r.volume,
-            rate:prod?r.outputRate:null, income:prod?r.outputRate*r.avgPrice:null};});
-const ECO_COLS=[
-  {key:"ware",      label:"ウェア",                num:false},
-  {key:"price",     label:"平均価格 (Cr)",         num:true},
-  {key:"vol",       label:"体積 (m³)",             num:true},
-  {key:"valPerVol", label:"体積あたり価値 (Cr/m³)", num:true},
-  {key:"rate",      label:"生産量/h",              num:true},
-  {key:"income",    label:"価値/h (Cr)",           num:true},
-];
-let ecoSort={key:"valPerVol", dir:-1};   // 既定: 体積あたり価値の降順
-function renderEco(){
-  const rows=[...ECO_ROWS].sort((a,b)=>{
-    const k=ecoSort.key;
-    const v = (typeof a[k]==="string") ? a[k].localeCompare(b[k],"ja")
-            : ((a[k]==null?-Infinity:a[k]) - (b[k]==null?-Infinity:b[k]));   // null (RAW の生産量等) は末尾へ
-    return v*ecoSort.dir;
-  });
-  const head=ECO_COLS.map(c=>{
-    const arrow = ecoSort.key===c.key ? (ecoSort.dir<0?" ▼":" ▲") : "";
-    return `<th class="${c.num?'r ':''}sortable" data-key="${c.key}">${c.label}${arrow}</th>`;
-  }).join("");
-  const body = ECO_ROWS.length ? rows.map(e=>
-    `<tr><td class="cyan">${e.ware}</td>`+
-    `<td class="r num">${fmt(e.price)}</td>`+
-    `<td class="r num muted">${fmt(e.vol)}</td>`+
-    `<td class="r num" style="color:var(--amber);font-weight:600">${fmt(e.valPerVol)}</td>`+
-    `<td class="r num muted">${e.rate!=null?fmt(e.rate):"—"}</td>`+
-    `<td class="r num" style="color:var(--cyan);font-weight:600">${e.income!=null?fmt(e.income):"—"}</td></tr>`).join("")
-   : `<tr><td colspan="6" class="empty">価格・体積が記載されたウェアなし</td></tr>`;
-  $("#ecoTable").innerHTML=`<tr>${head}</tr>`+body;
-}
-// 見出しクリックでソート (同列は方向トグル / 別列は数値=降順・文字=昇順から)
-$("#ecoTable").addEventListener("click", ev=>{
-  const th=ev.target.closest("th.sortable"); if(!th) return;
-  const key=th.dataset.key;
-  if(ecoSort.key===key) ecoSort.dir*=-1;
-  else ecoSort={key, dir: key==="ware"?1:-1};
-  renderEco();
-});
-
-//============ flow graph: 全レシピの依存関係を左→右の層状 DAG で描画 ============
-// 層 (列) = 原材料からの最長経路深さ。RAW と入力ゼロのモジュール(エネルギーセル)は深さ0=左端。
-function renderFlow(){
-  const el=$("#flow"); if(!el) return;
-
-  // 全ウェア集合 (生産ウェア + inputs に現れる RAW)
-  const set=new Set(Object.keys(DB));
-  Object.values(DB).forEach(r=>(r.inputs||[]).forEach(i=>set.add(i.ware)));
-  const all=[...set];
-  const isRaw=w=>!hasRecipe(DB[w]);
-
-  // 深さ (循環ガード付き)
-  const memo={}, visiting=new Set();
-  function depth(w){
-    if(memo[w]!=null) return memo[w];
-    const r=DB[w];
-    if(!hasRecipe(r) || !r.inputs.length) return memo[w]=0;
-    if(visiting.has(w)) return 0;
-    visiting.add(w);
-    let d=0; r.inputs.forEach(i=>{ d=Math.max(d, depth(i.ware)+1); });
-    visiting.delete(w);
-    return memo[w]=d;
-  }
-  all.forEach(depth);
-
-  // エッジ (材料 → 生産ウェア) と隣接。エネルギーセルはほぼ全ノードに繋がり線が煩雑になるため描画対象から除外
-  const edges=[], inAdj={}, outAdj={};
-  Object.keys(DB).forEach(w=>(DB[w].inputs||[]).forEach(i=>{
-    if(i.ware==="エネルギーセル") return;
-    edges.push({from:i.ware,to:w});
-    (outAdj[i.ware]||(outAdj[i.ware]=[])).push(w);
-    (inAdj[w]||(inAdj[w]=[])).push(i.ware);
-  }));
-
-  // 列ごとに振り分け
-  const cols=[]; all.forEach(w=>{ (cols[memo[w]]||(cols[memo[w]]=[])).push(w); });
-  cols.forEach(c=>c.sort((a,b)=>a.localeCompare(b))); // 初期順を安定化
-  const pos={}; cols.forEach(c=>c.forEach((w,i)=>pos[w]=i));
-
-  // 交差低減: barycenter を数回 (左右交互)
-  for(let pass=0; pass<8; pass++){
-    const ltr=pass%2===0;
-    const order=cols.map((_,i)=>i); if(!ltr) order.reverse();
-    order.forEach(ci=>{
-      const col=cols[ci]; if(!col) return;
-      const bary={};
-      col.forEach(w=>{
-        const nb=(ltr?inAdj[w]:outAdj[w])||[];
-        bary[w]=nb.length ? nb.reduce((s,n)=>s+pos[n],0)/nb.length : pos[w];
-      });
-      col.sort((a,b)=> bary[a]-bary[b]);
-      col.forEach((w,i)=>pos[w]=i);
+    // SEED is the single source of truth. No persistence; recipes are edited in code.
+    const DB = SEED;
+    // build (建設素材) の受け皿: 未記載ウェアを空配列で正規化し、以降は r.build を無条件参照できるようにする
+    Object.values(DB).forEach((r) => {
+        if (!r.build) r.build = [];
     });
-  }
+    // レシピ判定: outputRate と inputs を持つものだけが「生産ウェア」。
+    //   avgPrice/volume だけの DB エントリ (採掘・購入素材の価格データ) は RAW 扱いにする。
+    const hasRecipe = (rec) =>
+        !!(rec && rec.outputRate != null && Array.isArray(rec.inputs));
 
-  // レイアウト寸法
-  const NW=132, NH=30, ROW=60, COL=186, PAD=24;
-  const maxRows=cols.reduce((m,c)=>Math.max(m,c.length),0);
-  const W=(cols.length-1)*COL + NW + PAD*2;
-  const H=maxRows*ROW + PAD*2 - (ROW-NH);
+    //============ solver: recursive BOM explosion + shared-input aggregation ============
+    // targets: [{ware, rate}, ...] — 複数目標の需要を合算してから上流へ伝播する
+    function solve(targets) {
+        const demand = {};
+        const onPath = new Set();
+        let cycle = null;
+        function add(ware, rate) {
+            demand[ware] = (demand[ware] || 0) + rate;
+            const rec = DB[ware];
+            if (!hasRecipe(rec)) return; // レシピ無し (RAW / 価格のみ) は葉
+            if (onPath.has(ware)) {
+                cycle = ware;
+                return;
+            }
+            onPath.add(ware);
+            const mods = rate / rec.outputRate;
+            rec.inputs.forEach((i) => add(i.ware, mods * i.rate));
+            onPath.delete(ware);
+        }
+        targets.forEach((t) => add(t.ware, t.rate));
 
-  const xy={};
-  cols.forEach((col,ci)=>{
-    const startY=PAD + (maxRows-col.length)*ROW/2;
-    col.forEach((w,i)=>{ xy[w]={x:PAD+ci*COL, y:startY+i*ROW}; });
-  });
+        const produced = [],
+            raw = [];
+        Object.keys(demand).forEach((w) => {
+            const rec = DB[w];
+            if (hasRecipe(rec)) {
+                const ex = demand[w] / rec.outputRate;
+                produced.push({
+                    ware: w,
+                    module: rec.module || w,
+                    rate: demand[w],
+                    out: rec.outputRate,
+                    modsExact: ex,
+                    mods: Math.ceil(ex),
+                });
+            } else raw.push({ ware: w, rate: demand[w] });
+        });
+        produced.sort((a, b) => b.rate - a.rate);
+        raw.sort((a, b) => b.rate - a.rate);
+        return { demand, produced, raw, cycle };
+    }
+    // build explicit cascade tree (shows where consumption comes from)
+    function buildTree(ware, rate, depth) {
+        const rec = DB[ware];
+        const recipe = hasRecipe(rec);
+        const node = {
+            ware,
+            rate,
+            raw: !recipe,
+            mods: recipe ? rate / rec.outputRate : null,
+            children: [],
+        };
+        if (recipe && depth < 12) {
+            const m = rate / rec.outputRate;
+            rec.inputs.forEach((i) =>
+                node.children.push(buildTree(i.ware, m * i.rate, depth + 1)),
+            );
+        }
+        return node;
+    }
 
-  const colX=ci=>PAD+ci*COL;             // 列の左端 x
-  const ctrY=w=>xy[w].y+NH/2;            // ノード中心 y
-  const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    //============ render helpers ============
+    const $ = (s) => document.querySelector(s);
+    const fmt = (n) => {
+        if (n >= 100) return Math.round(n).toLocaleString();
+        return (Math.round(n * 10) / 10).toLocaleString(undefined, {
+            maximumFractionDigits: 1,
+        });
+    };
 
-  // --- 直線配線: ノードの右端から相手ノードの左端まで直線で結ぶ ---
-  const f=n=>Math.round(n*10)/10;
-  edges.forEach(e=>{
-    e.sx=colX(memo[e.from])+NW; e.sy=ctrY(e.from); e.tx=colX(memo[e.to]); e.ty=ctrY(e.to);
-  });
-  function pathD(e){ return `M${f(e.sx)} ${f(e.sy)} L${f(e.tx)} ${f(e.ty)}`; }
+    // 目標行を1つ生成して #targetList に追加する
+    function addTargetRow(ware, mods) {
+        const row = document.createElement("div");
+        row.className = "target-row";
+        row.innerHTML =
+            `<div class="f f-ware"><label>生産ウェア</label><select class="t-ware" style="width:100%"></select></div>` +
+            `<div class="f f-mods"><label>モジュール数</label><input type="number" class="t-mods" value="${mods != null ? mods : 1}" min="0" step="1"></div>` +
+            `<button class="btn-sm btn-danger t-remove" title="この目標を削除" aria-label="この目標を削除">✕</button>`;
+        const sel = row.querySelector(".t-ware");
+        // 目標に選べるのは生産ウェアのみ (採掘・購入素材は除外)
+        Object.keys(DB)
+            .filter((w) => hasRecipe(DB[w]))
+            .forEach((w) => {
+                const o = document.createElement("option");
+                o.value = w;
+                o.textContent = w;
+                sel.appendChild(o);
+            });
+        if (ware && DB[ware]) sel.value = ware;
+        $("#targetList").appendChild(row);
+        return row;
+    }
 
-  // エッジ (背面)
-  let svg=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-  svg+=`<g class="edges">`;
-  edges.forEach(e=>{
-    svg+=`<path class="fedge" data-from="${esc(e.from)}" data-to="${esc(e.to)}" d="${pathD(e)}"/>`;
-  });
-  svg+=`</g><g class="nodes">`;
-  // ノード (前面)
-  all.forEach(w=>{
-    const {x,y}=xy[w], raw=isRaw(w);
-    svg+=`<g class="fnode ${raw?'raw':'prod'}" data-ware="${esc(w)}">`+
-         `<rect x="${x}" y="${y}" width="${NW}" height="${NH}" rx="4"/>`+
-         `<text x="${x+NW/2}" y="${y+NH/2}" text-anchor="middle">${esc(w)}</text>`+
-         `</g>`;
-  });
-  svg+=`</g></svg>`;
-  el.innerHTML=svg;
+    // 現在の入力から有効な目標(モジュール数>0)の一覧を取得する
+    function readTargets() {
+        return [...document.querySelectorAll("#targetList .target-row")]
+            .map((row) => {
+                const ware = row.querySelector(".t-ware").value;
+                const mods =
+                    parseFloat(row.querySelector(".t-mods").value) || 0;
+                const rate =
+                    mods * (hasRecipe(DB[ware]) ? DB[ware].outputRate : 0);
+                return { ware, mods, rate };
+            })
+            .filter((t) => t.ware && t.rate > 0);
+    }
 
-  // hover で依存を強調 (PC のみ。タッチでは静的表示)
-  const nodes=[...el.querySelectorAll(".fnode")];
-  const paths=[...el.querySelectorAll(".fedge")];
-  function clearHi(){
-    el.classList.remove("hovering");
-    paths.forEach(p=>p.classList.remove("hot1","hot2"));
-    nodes.forEach(m=>m.classList.remove("self","on1","on2"));
-  }
-  nodes.forEach(n=>{
-    n.addEventListener("mouseenter",()=>{
-      const w=n.dataset.ware;
-      // 上流(必要素材)を BFS。dist=ホバーノードからの最短距離(0=自身,1=直下素材,…)
-      const dist={[w]:0}, q=[w];
-      while(q.length){
-        const cur=q.shift(), r=DB[cur]; if(!hasRecipe(r)) continue;
-        r.inputs.forEach(i=>{ if(dist[i.ware]===undefined){ dist[i.ware]=dist[cur]+1; q.push(i.ware); } });
-      }
-      // 線: 消費先(to)が部分グラフ内なら点灯。to が自身=直下供給=アンバー、それ以外=シアン
-      paths.forEach(p=>{
-        const d=dist[p.dataset.to];
-        p.classList.toggle("hot1", d===0);
-        p.classList.toggle("hot2", d!==undefined && d>0);
-      });
-      // ノード: 1次=アンバー / 2次以降=シアン / 自身=自身強調
-      nodes.forEach(m=>{
-        const d=dist[m.dataset.ware];
-        m.classList.toggle("self", d===0);
-        m.classList.toggle("on1",  d===1);
-        m.classList.toggle("on2",  d!==undefined && d>=2);
-      });
-      el.classList.add("hovering");
+    function renderTree(node) {
+        const isRaw = node.raw;
+        let html =
+            `<div class="tnode"><div class="row">` +
+            `<span class="tw ${isRaw ? "raw" : "prod"}">${node.ware}</span>` +
+            `<span class="trate">${fmt(node.rate)}/h</span>` +
+            (isRaw
+                ? `<span class="tag-raw" style="margin-left:6px">採掘/購入</span>`
+                : `<span class="tmod">×${node.mods.toFixed(2)} mod</span>`) +
+            `</div>`;
+        if (node.children.length) {
+            html +=
+                `<div class="children">` +
+                node.children.map(renderTree).join("") +
+                `</div>`;
+        }
+        return html + `</div>`;
+    }
+
+    function runSolve() {
+        const targets = readTargets();
+        if (!targets.length) {
+            $("#results").style.display = "none";
+            return;
+        }
+        const res = solve(targets);
+        $("#results").style.display = "block";
+
+        const totalMods = res.produced.reduce((s, p) => s + p.mods, 0);
+        const targetLabel =
+            targets.length === 1 ? targets[0].ware : `${targets.length} 種`;
+        const targetSub = targets.map((t) => `${t.ware}×${t.mods}`).join(" / ");
+
+        // 売上/h = 目標ウェアを全量売却した場合の収入 (avgPrice 記載分のみ)
+        const pricedTargets = targets.filter((t) => {
+            const r = DB[t.ware];
+            return r && r.avgPrice != null;
+        });
+        const targetIncome = pricedTargets.reduce(
+            (s, t) => s + t.rate * DB[t.ware].avgPrice,
+            0,
+        );
+        const incomeSub = pricedTargets.length
+            ? `${pricedTargets.length}/${targets.length} 種が価格記載`
+            : "価格データなし";
+
+        // 建設素材総量 = Σ (各モジュールの必要基数(切り上げ) × 1基あたり建設素材)。建てるのは整数基なので mods を使う。
+        const buildTotals = {};
+        res.produced.forEach((p) => {
+            DB[p.ware].build.forEach((b) => {
+                buildTotals[b.ware] =
+                    (buildTotals[b.ware] || 0) + b.amount * p.mods;
+            });
+        });
+        const buildRows = Object.keys(buildTotals).sort((a, b) =>
+            a.localeCompare(b, "ja"),
+        );
+        // 価格記載のある素材だけ合算。未記載素材があれば概算であることを注記する。
+        const buildPriced = buildRows.filter(
+            (w) => DB[w] && DB[w].avgPrice != null,
+        );
+        const buildCost = buildPriced.reduce(
+            (s, w) => s + buildTotals[w] * DB[w].avgPrice,
+            0,
+        );
+        const buildCostSub = buildRows.length
+            ? buildPriced.length === buildRows.length
+                ? `${buildRows.length} 種の素材`
+                : `${buildPriced.length}/${buildRows.length} 種が価格記載`
+            : "建設データなし";
+
+        // 採掘・購入材料の調達費用/h = Σ 必要量/h × avgPrice (価格記載分のみ)
+        const rawPriced = res.raw.filter(
+            (x) => DB[x.ware] && DB[x.ware].avgPrice != null,
+        );
+        const rawCost = rawPriced.reduce(
+            (s, x) => s + x.rate * DB[x.ware].avgPrice,
+            0,
+        );
+        const rawCostSub = res.raw.length
+            ? rawPriced.length === res.raw.length
+                ? `${res.raw.length} 種`
+                : `${rawPriced.length}/${res.raw.length} 種が価格記載`
+            : "材料なし";
+
+        $("#statCards").innerHTML =
+            card("目標", targetLabel, "cyan", targetSub) +
+            card("売上 / h", `${fmt(targetIncome)} Cr`, "cyan", incomeSub) +
+            card(
+                "総生産モジュール",
+                totalMods,
+                "",
+                `${res.produced.length} 種`,
+            ) +
+            card(
+                "建設費用 (概算)",
+                `${fmt(buildCost)} Cr`,
+                "amber",
+                buildCostSub,
+            ) +
+            card("材料費 / h", `${fmt(rawCost)} Cr`, "amber", rawCostSub) +
+            (res.cycle ? card("⚠ 循環検出", "", "amber", res.cycle) : "");
+
+        $("#tree").innerHTML = targets
+            .map(
+                (t) =>
+                    `<div class="tree-target"><div class="tree-head">${t.ware}` +
+                    `<span class="trate">×${t.mods} mod ▸ ${fmt(t.rate)}/h</span></div>` +
+                    renderTree(buildTree(t.ware, t.rate, 0)) +
+                    `</div>`,
+            )
+            .join("");
+
+        $("#rawTable").innerHTML =
+            `<tr><th>材料</th><th class="r">必要量/h</th><th class="r">単価 (Cr)</th><th class="r">費用/h (Cr)</th></tr>` +
+            (res.raw.length
+                ? res.raw
+                      .map((x) => {
+                          const pr = DB[x.ware] && DB[x.ware].avgPrice;
+                          return (
+                              `<tr><td class="amber">${x.ware}</td><td class="r num">${fmt(x.rate)}</td>` +
+                              `<td class="r num muted">${pr != null ? fmt(pr) : "—"}</td>` +
+                              `<td class="r num" style="color:var(--amber);font-weight:600">${pr != null ? fmt(x.rate * pr) : "—"}</td></tr>`
+                          );
+                      })
+                      .join("") +
+                  `<tr><td class="muted" colspan="3">合計 (価格記載分)</td>` +
+                  `<td class="r num" style="color:var(--amber);font-weight:700">${fmt(rawCost)}</td></tr>`
+                : `<tr><td colspan="4" class="empty">なし</td></tr>`);
+
+        // 各生産モジュールの建設費用 = 必要基数(切り上げ mods) × 1基あたり建設素材 × 単価 (価格記載分のみ)。
+        // 全モジュールの合算は上の buildCost と一致する。
+        $("#modTable").innerHTML =
+            `<tr><th>生産モジュール</th><th class="r">必要量/h</th><th class="r">1基あたり/h</th><th class="r">必要基数 (実数)</th><th class="r">建設費用 (Cr)</th></tr>` +
+            res.produced
+                .map((p) => {
+                    const bp = DB[p.ware].build.filter(
+                        (b) => DB[b.ware] && DB[b.ware].avgPrice != null,
+                    );
+                    const allPriced =
+                        DB[p.ware].build.length > 0 &&
+                        bp.length === DB[p.ware].build.length;
+                    const cost = bp.reduce(
+                        (s, b) => s + b.amount * p.mods * DB[b.ware].avgPrice,
+                        0,
+                    );
+                    const costCell = DB[p.ware].build.length
+                        ? `${fmt(cost)}${allPriced ? "" : " *"}`
+                        : "—";
+                    return (
+                        `<tr><td class="cyan">${p.module}</td><td class="r num">${fmt(p.rate)}</td>` +
+                        `<td class="r num muted">${fmt(p.out)}</td>` +
+                        `<td class="r num" style="color:var(--cyan);font-weight:600">${p.modsExact.toFixed(2)}</td>` +
+                        `<td class="r num" style="color:var(--amber);font-weight:600">${costCell}</td></tr>`
+                    );
+                })
+                .join("") +
+            `<tr><td class="muted" colspan="4">合計建設費用 (価格記載分)</td>` +
+            `<td class="r num" style="color:var(--amber);font-weight:700">${fmt(buildCost)}</td></tr>`;
+
+        // 建設素材テーブル (集計は上のサマリー計算で済んでいる buildTotals / buildRows / buildCost を再利用)
+        $("#buildTable").innerHTML =
+            `<tr><th>建設素材</th><th class="r">必要総量</th><th class="r">単価 (Cr)</th><th class="r">費用 (Cr)</th></tr>` +
+            (buildRows.length
+                ? buildRows
+                      .map((w) => {
+                          const pr = DB[w] && DB[w].avgPrice;
+                          return (
+                              `<tr><td class="cyan">${w}</td><td class="r num">${fmt(buildTotals[w])}</td>` +
+                              `<td class="r num muted">${pr != null ? fmt(pr) : "—"}</td>` +
+                              `<td class="r num" style="color:var(--amber);font-weight:600">${pr != null ? fmt(buildTotals[w] * pr) : "—"}</td></tr>`
+                          );
+                      })
+                      .join("") +
+                  `<tr><td class="muted" colspan="3">合計 (価格記載分)</td>` +
+                  `<td class="r num" style="color:var(--amber);font-weight:700">${fmt(buildCost)}</td></tr>`
+                : `<tr><td colspan="4" class="empty">建設素材データなし (SEED の build を記載)</td></tr>`);
+    }
+    function card(k, val, cls, sub) {
+        return (
+            `<div class="stat"><div class="k">${k}</div>` +
+            `<div class="val ${cls || ""}">${val}</div>` +
+            (sub ? `<div class="k" style="margin-top:2px">${sub}</div>` : "") +
+            `</div>`
+        );
+    }
+
+    //============ 収益性テーブル: SEED で avgPrice/volume 両方を記載した全ウェア (目標と独立・列ソート可) ============
+    const ECO_ROWS = Object.keys(DB)
+        .filter((w) => DB[w].avgPrice != null && DB[w].volume != null)
+        .map((w) => {
+            const r = DB[w];
+            const prod = hasRecipe(r); // RAW (採掘・購入素材) は生産量/価値/h を持たない
+            return {
+                ware: w,
+                price: r.avgPrice,
+                vol: r.volume,
+                valPerVol: r.avgPrice / r.volume,
+                rate: prod ? r.outputRate : null,
+                income: prod ? r.outputRate * r.avgPrice : null,
+            };
+        });
+    const ECO_COLS = [
+        { key: "ware", label: "ウェア", num: false },
+        { key: "price", label: "平均価格 (Cr)", num: true },
+        { key: "vol", label: "体積 (m³)", num: true },
+        { key: "valPerVol", label: "体積あたり価値 (Cr/m³)", num: true },
+        { key: "rate", label: "生産量/h", num: true },
+        { key: "income", label: "価値/h (Cr)", num: true },
+    ];
+    let ecoSort = { key: "valPerVol", dir: -1 }; // 既定: 体積あたり価値の降順
+    function renderEco() {
+        const rows = [...ECO_ROWS].sort((a, b) => {
+            const k = ecoSort.key;
+            const v =
+                typeof a[k] === "string"
+                    ? a[k].localeCompare(b[k], "ja")
+                    : (a[k] == null ? -Infinity : a[k]) -
+                      (b[k] == null ? -Infinity : b[k]); // null (RAW の生産量等) は末尾へ
+            return v * ecoSort.dir;
+        });
+        const head = ECO_COLS.map((c) => {
+            const arrow =
+                ecoSort.key === c.key ? (ecoSort.dir < 0 ? " ▼" : " ▲") : "";
+            return `<th class="${c.num ? "r " : ""}sortable" data-key="${c.key}">${c.label}${arrow}</th>`;
+        }).join("");
+        const body = ECO_ROWS.length
+            ? rows
+                  .map(
+                      (e) =>
+                          `<tr><td class="cyan">${e.ware}</td>` +
+                          `<td class="r num">${fmt(e.price)}</td>` +
+                          `<td class="r num muted">${fmt(e.vol)}</td>` +
+                          `<td class="r num" style="color:var(--amber);font-weight:600">${fmt(e.valPerVol)}</td>` +
+                          `<td class="r num muted">${e.rate != null ? fmt(e.rate) : "—"}</td>` +
+                          `<td class="r num" style="color:var(--cyan);font-weight:600">${e.income != null ? fmt(e.income) : "—"}</td></tr>`,
+                  )
+                  .join("")
+            : `<tr><td colspan="6" class="empty">価格・体積が記載されたウェアなし</td></tr>`;
+        $("#ecoTable").innerHTML = `<tr>${head}</tr>` + body;
+    }
+    // 見出しクリックでソート (同列は方向トグル / 別列は数値=降順・文字=昇順から)
+    $("#ecoTable").addEventListener("click", (ev) => {
+        const th = ev.target.closest("th.sortable");
+        if (!th) return;
+        const key = th.dataset.key;
+        if (ecoSort.key === key) ecoSort.dir *= -1;
+        else ecoSort = { key, dir: key === "ware" ? 1 : -1 };
+        renderEco();
     });
-    n.addEventListener("mouseleave", clearHi);
-  });
-}
 
-//============ wire up ============
-const targetList=$("#targetList");
-$("#solveBtn").onclick=runSolve;
-$("#addTargetBtn").onclick=()=>{ addTargetRow(); runSolve(); };
-// 生産ウェアの選択、またはモジュール数に有効な数値が入ったら自動計算(行は動的なので委譲)
-targetList.addEventListener("change", e=>{
-  if(e.target.classList.contains("t-ware")) runSolve();
-});
-targetList.addEventListener("input", e=>{
-  if(!e.target.classList.contains("t-mods")) return;
-  const v=e.target.value;
-  if(v.trim()==="") return;                    // 空欄は待機(計算しない)
-  if(!Number.isFinite(parseFloat(v))) return;  // 無効値は無視
-  runSolve();
-});
-targetList.addEventListener("click", e=>{
-  if(!e.target.classList.contains("t-remove")) return;
-  e.target.closest(".target-row").remove();
-  runSolve();
-});
+    //============ セクター資源テーブル (SECTORS シード・列ソート可) ============
+    const SECTOR_COLS = [
+        { key: "sector", label: "セクター", num: false },
+        { key: "owner", label: "勢力", num: false },
+        ...SECTOR_RESOURCES.map((r) => ({
+            key: r,
+            label: r,
+            num: true,
+            res: true,
+        })),
+    ];
+    let sectorSort = { key: "sector", dir: 1 }; // 既定: セクター名の昇順
+    function renderSectors() {
+        const val = (s, c) =>
+            c.res
+                ? s.res?.[c.key]
+                : c.key === "owner"
+                  ? s.owner || "無所属" // 表示と同じ値で比較 (空 = 無所属)
+                  : s[c.key];
+        const rows = [...SECTORS].sort((a, b) => {
+            const c = SECTOR_COLS.find((x) => x.key === sectorSort.key),
+                va = val(a, c),
+                vb = val(b, c);
+            const v = !c.num
+                ? String(va ?? "").localeCompare(String(vb ?? ""), "ja")
+                : (va == null ? -Infinity : va) - (vb == null ? -Infinity : vb); // 未調査 (—) は末尾へ
+            return v * sectorSort.dir;
+        });
+        const head =
+            SECTOR_COLS.map((c) => {
+                const arrow =
+                    sectorSort.key === c.key
+                        ? sectorSort.dir < 0
+                            ? " ▼"
+                            : " ▲"
+                        : "";
+                return `<th class="${c.num ? "r " : ""}sortable" data-key="${c.key}">${c.label}${arrow}</th>`;
+            }).join("") + `<th>備考</th>`;
+        const cell = (v) =>
+            v == null
+                ? `<td class="r num muted">—</td>`
+                : v === 0
+                  ? `<td class="r num" style="color:var(--faint)">0</td>`
+                  : `<td class="r num" style="color:var(--amber);font-weight:600">${fmt(v)}</td>`;
+        const body = SECTORS.length
+            ? rows
+                  .map(
+                      (s) =>
+                          `<tr><td class="cyan">${s.sector}</td>` +
+                          `<td class="muted">${s.owner || "無所属"}</td>` +
+                          SECTOR_RESOURCES.map((r) => cell(s.res?.[r])).join(
+                              "",
+                          ) +
+                          `<td class="muted">${s.note ?? ""}</td></tr>`,
+                  )
+                  .join("")
+            : `<tr><td colspan="${SECTOR_COLS.length + 1}" class="empty">セクターデータなし (SECTORS を記載)</td></tr>`;
+        $("#sectorTable").innerHTML = `<tr>${head}</tr>` + body;
+    }
+    $("#sectorTable").addEventListener("click", (ev) => {
+        const th = ev.target.closest("th.sortable");
+        if (!th) return;
+        const key = th.dataset.key;
+        if (sectorSort.key === key) sectorSort.dir *= -1;
+        else
+            sectorSort = {
+                key,
+                dir: SECTOR_COLS.find((c) => c.key === key)?.num ? -1 : 1,
+            };
+        renderSectors();
+    });
 
-(function init(){
-  addTargetRow();   // 初期表示に空の目標行を1つ
-  runSolve();
-  renderFlow();     // 全ウェアの依存関係マップ (常時表示)
-  renderEco();      // 収益性テーブル (SEED 全価格ウェア・常時表示)
-})();
+    //============ flow graph: 全レシピの依存関係を左→右の層状 DAG で描画 ============
+    // 層 (列) = 原材料からの最長経路深さ。RAW と入力ゼロのモジュール(エネルギーセル)は深さ0=左端。
+    function renderFlow() {
+        const el = $("#flow");
+        if (!el) return;
+
+        // 全ウェア集合 (生産ウェア + inputs に現れる RAW)
+        const set = new Set(Object.keys(DB));
+        Object.values(DB).forEach((r) =>
+            (r.inputs || []).forEach((i) => set.add(i.ware)),
+        );
+        const all = [...set];
+        const isRaw = (w) => !hasRecipe(DB[w]);
+
+        // 深さ (循環ガード付き)
+        const memo = {},
+            visiting = new Set();
+        function depth(w) {
+            if (memo[w] != null) return memo[w];
+            const r = DB[w];
+            if (!hasRecipe(r) || !r.inputs.length) return (memo[w] = 0);
+            if (visiting.has(w)) return 0;
+            visiting.add(w);
+            let d = 0;
+            r.inputs.forEach((i) => {
+                d = Math.max(d, depth(i.ware) + 1);
+            });
+            visiting.delete(w);
+            return (memo[w] = d);
+        }
+        all.forEach(depth);
+
+        // エッジ (材料 → 生産ウェア) と隣接。エネルギーセルはほぼ全ノードに繋がり線が煩雑になるため描画対象から除外
+        const edges = [],
+            inAdj = {},
+            outAdj = {};
+        Object.keys(DB).forEach((w) =>
+            (DB[w].inputs || []).forEach((i) => {
+                if (i.ware === "エネルギーセル") return;
+                edges.push({ from: i.ware, to: w });
+                (outAdj[i.ware] || (outAdj[i.ware] = [])).push(w);
+                (inAdj[w] || (inAdj[w] = [])).push(i.ware);
+            }),
+        );
+
+        // 列ごとに振り分け
+        const cols = [];
+        all.forEach((w) => {
+            (cols[memo[w]] || (cols[memo[w]] = [])).push(w);
+        });
+        cols.forEach((c) => c.sort((a, b) => a.localeCompare(b))); // 初期順を安定化
+        const pos = {};
+        cols.forEach((c) => c.forEach((w, i) => (pos[w] = i)));
+
+        // 交差低減: barycenter を数回 (左右交互)
+        for (let pass = 0; pass < 8; pass++) {
+            const ltr = pass % 2 === 0;
+            const order = cols.map((_, i) => i);
+            if (!ltr) order.reverse();
+            order.forEach((ci) => {
+                const col = cols[ci];
+                if (!col) return;
+                const bary = {};
+                col.forEach((w) => {
+                    const nb = (ltr ? inAdj[w] : outAdj[w]) || [];
+                    bary[w] = nb.length
+                        ? nb.reduce((s, n) => s + pos[n], 0) / nb.length
+                        : pos[w];
+                });
+                col.sort((a, b) => bary[a] - bary[b]);
+                col.forEach((w, i) => (pos[w] = i));
+            });
+        }
+
+        // レイアウト寸法
+        const NW = 132,
+            NH = 30,
+            ROW = 60,
+            COL = 186,
+            PAD = 24;
+        const maxRows = cols.reduce((m, c) => Math.max(m, c.length), 0);
+        const W = (cols.length - 1) * COL + NW + PAD * 2;
+        const H = maxRows * ROW + PAD * 2 - (ROW - NH);
+
+        const xy = {};
+        cols.forEach((col, ci) => {
+            const startY = PAD + ((maxRows - col.length) * ROW) / 2;
+            col.forEach((w, i) => {
+                xy[w] = { x: PAD + ci * COL, y: startY + i * ROW };
+            });
+        });
+
+        const colX = (ci) => PAD + ci * COL; // 列の左端 x
+        const ctrY = (w) => xy[w].y + NH / 2; // ノード中心 y
+        const esc = (s) =>
+            s
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+
+        // --- 直線配線: ノードの右端から相手ノードの左端まで直線で結ぶ ---
+        const f = (n) => Math.round(n * 10) / 10;
+        edges.forEach((e) => {
+            e.sx = colX(memo[e.from]) + NW;
+            e.sy = ctrY(e.from);
+            e.tx = colX(memo[e.to]);
+            e.ty = ctrY(e.to);
+        });
+        function pathD(e) {
+            return `M${f(e.sx)} ${f(e.sy)} L${f(e.tx)} ${f(e.ty)}`;
+        }
+
+        // エッジ (背面)
+        let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+        svg += `<g class="edges">`;
+        edges.forEach((e) => {
+            svg += `<path class="fedge" data-from="${esc(e.from)}" data-to="${esc(e.to)}" d="${pathD(e)}"/>`;
+        });
+        svg += `</g><g class="nodes">`;
+        // ノード (前面)
+        all.forEach((w) => {
+            const { x, y } = xy[w],
+                raw = isRaw(w);
+            svg +=
+                `<g class="fnode ${raw ? "raw" : "prod"}" data-ware="${esc(w)}">` +
+                `<rect x="${x}" y="${y}" width="${NW}" height="${NH}" rx="4"/>` +
+                `<text x="${x + NW / 2}" y="${y + NH / 2}" text-anchor="middle">${esc(w)}</text>` +
+                `</g>`;
+        });
+        svg += `</g></svg>`;
+        el.innerHTML = svg;
+
+        // hover で依存を強調 (PC のみ。タッチでは静的表示)
+        const nodes = [...el.querySelectorAll(".fnode")];
+        const paths = [...el.querySelectorAll(".fedge")];
+        function clearHi() {
+            el.classList.remove("hovering");
+            paths.forEach((p) => p.classList.remove("hot1", "hot2"));
+            nodes.forEach((m) => m.classList.remove("self", "on1", "on2"));
+        }
+        nodes.forEach((n) => {
+            n.addEventListener("mouseenter", () => {
+                const w = n.dataset.ware;
+                // 上流(必要素材)を BFS。dist=ホバーノードからの最短距離(0=自身,1=直下素材,…)
+                const dist = { [w]: 0 },
+                    q = [w];
+                while (q.length) {
+                    const cur = q.shift(),
+                        r = DB[cur];
+                    if (!hasRecipe(r)) continue;
+                    r.inputs.forEach((i) => {
+                        if (dist[i.ware] === undefined) {
+                            dist[i.ware] = dist[cur] + 1;
+                            q.push(i.ware);
+                        }
+                    });
+                }
+                // 線: 消費先(to)が部分グラフ内なら点灯。to が自身=直下供給=アンバー、それ以外=シアン
+                paths.forEach((p) => {
+                    const d = dist[p.dataset.to];
+                    p.classList.toggle("hot1", d === 0);
+                    p.classList.toggle("hot2", d !== undefined && d > 0);
+                });
+                // ノード: 1次=アンバー / 2次以降=シアン / 自身=自身強調
+                nodes.forEach((m) => {
+                    const d = dist[m.dataset.ware];
+                    m.classList.toggle("self", d === 0);
+                    m.classList.toggle("on1", d === 1);
+                    m.classList.toggle("on2", d !== undefined && d >= 2);
+                });
+                el.classList.add("hovering");
+            });
+            n.addEventListener("mouseleave", clearHi);
+        });
+    }
+
+    //============ wire up ============
+    // ビュー切替タブ (生産計算 / セクター資源)
+    document.querySelectorAll(".tab").forEach((btn) =>
+        btn.addEventListener("click", () => {
+            document
+                .querySelectorAll(".tab")
+                .forEach((b) => b.classList.toggle("active", b === btn));
+            $("#view-solver").style.display =
+                btn.dataset.view === "solver" ? "" : "none";
+            $("#view-sectors").style.display =
+                btn.dataset.view === "sectors" ? "" : "none";
+        }),
+    );
+    const targetList = $("#targetList");
+    $("#solveBtn").onclick = runSolve;
+    $("#addTargetBtn").onclick = () => {
+        addTargetRow();
+        runSolve();
+    };
+    // 生産ウェアの選択、またはモジュール数に有効な数値が入ったら自動計算(行は動的なので委譲)
+    targetList.addEventListener("change", (e) => {
+        if (e.target.classList.contains("t-ware")) runSolve();
+    });
+    targetList.addEventListener("input", (e) => {
+        if (!e.target.classList.contains("t-mods")) return;
+        const v = e.target.value;
+        if (v.trim() === "") return; // 空欄は待機(計算しない)
+        if (!Number.isFinite(parseFloat(v))) return; // 無効値は無視
+        runSolve();
+    });
+    targetList.addEventListener("click", (e) => {
+        if (!e.target.classList.contains("t-remove")) return;
+        e.target.closest(".target-row").remove();
+        runSolve();
+    });
+
+    (function init() {
+        addTargetRow(); // 初期表示に空の目標行を1つ
+        runSolve();
+        renderFlow(); // 全ウェアの依存関係マップ (常時表示)
+        renderEco(); // 収益性テーブル (SEED 全価格ウェア・常時表示)
+        renderSectors(); // セクター資源テーブル (SECTORS シード)
+    })();
 </script>
