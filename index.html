@@ -755,6 +755,9 @@
                     <span class="num">04</span> 採掘・購入材料
                     <span class="tag-raw">RAW</span>
                 </div>
+                <p class="hint">
+                    エネルギーセルは生産ウェアだが、ほぼ全ウェアの生産で消費されるため、例外として消費分を材料費に含める(目標として生産する分は除く)。
+                </p>
                 <div class="tscroll"><table id="rawTable"></table></div>
             </div>
         </div>
@@ -1653,18 +1656,28 @@
                 : `${buildPriced.length}/${buildRows.length} 種が価格記載`
             : "建設データなし";
 
-        // 採掘・購入材料の調達費用/h = Σ 必要量/h × avgPrice (価格記載分のみ)
-        const rawPriced = res.raw.filter(
+        // 採掘・購入材料の調達費用/h = Σ 必要量/h × avgPrice (価格記載分のみ)。
+        // 例外: エネルギーセルは inputs 空の生産ウェアだが、ほぼ全ウェアの生産で
+        // 消費されるため、消費分 (目標として生産する分は除く) を費用に合算する。
+        const ENERGY = "エネルギーセル";
+        const energyUse =
+            (res.demand[ENERGY] || 0) -
+            targets.reduce((s, t) => (t.ware === ENERGY ? s + t.rate : s), 0);
+        const costRows = [...res.raw];
+        if (energyUse > 0)
+            costRows.push({ ware: ENERGY, rate: energyUse, energy: true });
+        costRows.sort((a, b) => b.rate - a.rate);
+        const rawPriced = costRows.filter(
             (x) => DB[x.ware] && DB[x.ware].avgPrice != null,
         );
         const rawCost = rawPriced.reduce(
             (s, x) => s + x.rate * DB[x.ware].avgPrice,
             0,
         );
-        const rawCostSub = res.raw.length
-            ? rawPriced.length === res.raw.length
-                ? `${res.raw.length} 種`
-                : `${rawPriced.length}/${res.raw.length} 種が価格記載`
+        const rawCostSub = costRows.length
+            ? rawPriced.length === costRows.length
+                ? `${costRows.length} 種`
+                : `${rawPriced.length}/${costRows.length} 種が価格記載`
             : "材料なし";
 
         $("#statCards").innerHTML =
@@ -1697,12 +1710,12 @@
 
         $("#rawTable").innerHTML =
             `<tr><th>材料</th><th class="r">必要量/h</th><th class="r">単価 (Cr)</th><th class="r">費用/h (Cr)</th></tr>` +
-            (res.raw.length
-                ? res.raw
+            (costRows.length
+                ? costRows
                       .map((x) => {
                           const pr = DB[x.ware] && DB[x.ware].avgPrice;
                           return (
-                              `<tr><td class="amber">${x.ware}</td><td class="r num">${fmt(x.rate)}</td>` +
+                              `<tr><td class="${x.energy ? "cyan" : "amber"}">${x.ware}${x.energy ? ` <span class="muted">(生産品)</span>` : ""}</td><td class="r num">${fmt(x.rate)}</td>` +
                               `<td class="r num muted">${pr != null ? fmt(pr) : "—"}</td>` +
                               `<td class="r num" style="color:var(--amber);font-weight:600">${pr != null ? fmt(x.rate * pr) : "—"}</td></tr>`
                           );
