@@ -1753,6 +1753,21 @@
             targets.length === 1 ? targets[0].ware : `${targets.length} 種`;
         const targetSub = targets.map((t) => `${t.ware}×${t.mods}`).join(" / ");
 
+        // 生産数/h = 全目標ウェアの毎時生産量の合計。
+        // 生産体積/h = volume 記載済みの目標について毎時生産量 × 1個あたり体積を合算。
+        const targetOutput = targets.reduce((s, t) => s + t.rate, 0);
+        const volumeTargets = targets.filter((t) => {
+            const r = DB[t.ware];
+            return r && r.volume != null;
+        });
+        const targetVolume = volumeTargets.reduce(
+            (s, t) => s + t.rate * DB[t.ware].volume,
+            0,
+        );
+        const volumeSub = volumeTargets.length
+            ? `${volumeTargets.length}/${targets.length} 種が体積記載`
+            : "体積データなし";
+
         // 売上/h = 目標ウェアを全量売却した場合の収入 (avgPrice 記載分のみ)
         const pricedTargets = targets.filter((t) => {
             const r = DB[t.ware];
@@ -1817,6 +1832,18 @@
 
         $("#statCards").innerHTML =
             card("目標", targetLabel, "cyan", targetSub) +
+            card(
+                "生産数 / h",
+                `${fmt(targetOutput)} 個`,
+                "cyan",
+                "全目標の合計",
+            ) +
+            card(
+                "生産体積 / h",
+                `${fmt(targetVolume)} m³`,
+                "cyan",
+                volumeSub,
+            ) +
             card("売上 / h", `${fmt(targetIncome)} Cr`, "cyan", incomeSub) +
             card(
                 "総生産モジュール",
