@@ -520,6 +520,32 @@
     .flow svg {
         display: block;
     }
+    .flane rect {
+        stroke: var(--line);
+        stroke-width: 1;
+        fill: var(--panel2);
+        opacity: 0.2;
+    }
+    .flane.gas rect,
+    .flane.ice rect {
+        fill: var(--cyan);
+        opacity: 0.035;
+    }
+    .flane.mixed rect {
+        fill: var(--green);
+        opacity: 0.035;
+    }
+    .flane.mineral rect {
+        fill: var(--amber);
+        opacity: 0.035;
+    }
+    .flane text {
+        font-family: "Rajdhani", sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        fill: var(--muted);
+    }
     .flow-legend {
         display: flex;
         gap: 16px;
@@ -550,6 +576,11 @@
         border-color: var(--cyan-dim);
         background: #0a1d27;
     }
+    .flow-legend .sw.terminal {
+        border-color: var(--green);
+        background: transparent;
+        border-right-width: 3px;
+    }
     .flow-legend .note {
         margin-left: auto;
         color: var(--faint);
@@ -571,14 +602,17 @@
         transition:
             stroke 0.12s,
             filter 0.12s;
-        cursor: default;
+        cursor: pointer;
     }
     .fnode text {
         font-family: "IBM Plex Mono", monospace;
-        font-size: 10px;
         fill: var(--text);
         pointer-events: none;
         dominant-baseline: central;
+    }
+    .fnode .fnode-name {
+        font-size: 11px;
+        font-weight: 500;
     }
     .fnode.raw rect {
         fill: #1a1306;
@@ -594,6 +628,22 @@
     .fnode.prod text {
         fill: var(--cyan-soft);
     }
+    .fnode.terminal rect {
+        stroke: var(--green);
+        stroke-width: 1.5;
+    }
+    .fterminal-mark {
+        fill: none;
+        stroke: var(--green);
+        stroke-width: 1.5;
+        stroke-linecap: square;
+        pointer-events: none;
+        transition: opacity 0.12s;
+    }
+    .fnode:focus-visible rect {
+        stroke: var(--cyan);
+        stroke-width: 2;
+    }
     /* hover 強調: 直下(1次)素材=アンバー / 2次以降=シアン を再帰的に点灯 */
     .flow.hovering .fedge {
         opacity: 0.1;
@@ -602,6 +652,9 @@
         opacity: 0.28;
     }
     .flow.hovering .fnode text {
+        opacity: 0.28;
+    }
+    .flow.hovering .fterminal-mark {
         opacity: 0.28;
     }
     .fedge.hot1 {
@@ -619,7 +672,10 @@
     .fnode.on2 rect,
     .fnode.self text,
     .fnode.on1 text,
-    .fnode.on2 text {
+    .fnode.on2 text,
+    .fnode.self .fterminal-mark,
+    .fnode.on1 .fterminal-mark,
+    .fnode.on2 .fterminal-mark {
         opacity: 1 !important;
     }
     .fnode.self rect {
@@ -811,9 +867,12 @@
                 ><span class="sw raw"></span> 採掘・購入 (RAW)</span
             >
             <span class="key"><span class="sw prod"></span> 生産ウェア</span>
+            <span class="key"
+                ><span class="sw terminal"></span> 派生なし (最終)</span
+            >
             <span class="note"
-                >左 = 素材 / 右 = 加工品 ・
-                ノードにカーソルを合わせると依存を強調</span
+                >左 = 素材 / 右 = 加工品 ・ 資源系統ごとに帯分け ・
+                クリックで依存を固定</span
             >
         </div>
         <div class="flow-wrap"><div class="flow" id="flow"></div></div>
@@ -2083,11 +2142,30 @@
         renderSectors();
     });
 
-    //============ flow graph: 全レシピの依存関係を左→右の層状 DAG で描画 ============
-    // 層 (列) = 原材料からの最長経路深さ。RAW と入力ゼロのモジュール(エネルギーセル)は深さ0=左端。
+    //============ flow graph: 資源ファミリー帯つきの左→右レイヤー DAG ============
+    // 層 (列) = 原材料からの最長経路深さ。縦方向は再帰的な RAW 依存が近いウェアをまとめる。
     function renderFlow() {
         const el = $("#flow");
         if (!el) return;
+
+        const ENERGY = "エネルギーセル";
+        const RAW_ORDER = [
+            "ヘリウム",
+            "メタン",
+            "水素",
+            "鉱石",
+            "シリコン",
+            "ニヴィディウム",
+            "氷",
+        ];
+        const FAMILY_ORDER = ["gas", "mixed", "mineral", "ice", "power"];
+        const FAMILY_LABEL = {
+            gas: "GAS / ガス",
+            mixed: "CROSS / 複合資源",
+            mineral: "MINERAL / 鉱物",
+            ice: "ICE / 氷・水系",
+            power: "POWER / 入力なし",
+        };
 
         // 全ウェア集合 (生産ウェア + inputs に現れる RAW)
         const set = new Set(Object.keys(DB));
@@ -2096,7 +2174,60 @@
         );
         const all = [...set];
         const isRaw = (w) => !hasRecipe(DB[w]);
+        const rawList = all
+            .filter((w) => isRaw(w) && w !== ENERGY)
+            .sort((a, b) => {
+                const ai = RAW_ORDER.indexOf(a),
+                    bi = RAW_ORDER.indexOf(b);
+                if (ai >= 0 && bi >= 0) return ai - bi;
+                if (ai >= 0) return -1;
+                if (bi >= 0) return 1;
+                return a.localeCompare(b);
+            });
+        const rawRank = Object.fromEntries(rawList.map((w, i) => [w, i]));
 
+        // 各ウェアから上流へ再帰し、最終的に必要になる RAW の集合を求める。
+        const rawMemo = {};
+        function rawDeps(w, onPath = new Set()) {
+            if (rawMemo[w]) return rawMemo[w];
+            if (w === ENERGY) return (rawMemo[w] = []);
+            const r = DB[w];
+            if (!hasRecipe(r)) return (rawMemo[w] = [w]);
+            if (!r.inputs.length || onPath.has(w)) return (rawMemo[w] = []);
+            const nextPath = new Set(onPath);
+            nextPath.add(w);
+            const deps = new Set();
+            r.inputs.forEach((i) => {
+                if (i.ware === ENERGY) return;
+                rawDeps(i.ware, nextPath).forEach((raw) => deps.add(raw));
+            });
+            return (rawMemo[w] = [...deps].sort(
+                (a, b) => (rawRank[a] ?? 999) - (rawRank[b] ?? 999),
+            ));
+        }
+        all.forEach((w) => rawDeps(w));
+
+        function familyOf(w) {
+            const kinds = new Set(
+                rawDeps(w).map((raw) => {
+                    if (["ヘリウム", "メタン", "水素"].includes(raw))
+                        return "gas";
+                    if (["鉱石", "シリコン", "ニヴィディウム"].includes(raw))
+                        return "mineral";
+                    if (raw === "氷") return "ice";
+                    return "mixed";
+                }),
+            );
+            if (!kinds.size) return "power";
+            return kinds.size === 1 ? [...kinds][0] : "mixed";
+        }
+        function rawCenter(w) {
+            const deps = rawDeps(w);
+            return deps.length
+                ? deps.reduce((sum, raw) => sum + (rawRank[raw] ?? 999), 0) /
+                      deps.length
+                : 999;
+        }
         // 深さ (循環ガード付き)
         const memo = {},
             visiting = new Set();
@@ -2115,148 +2246,260 @@
         }
         all.forEach(depth);
 
-        // エッジ (材料 → 生産ウェア) と隣接。エネルギーセルはほぼ全ノードに繋がり線が煩雑になるため描画対象から除外
+        // エッジ (材料 → 生産ウェア) と隣接。エネルギーセルの線は密集を避けるため描画しない。
         const edges = [],
             inAdj = {},
-            outAdj = {};
+            outAdj = {},
+            consumedBy = {};
         Object.keys(DB).forEach((w) =>
             (DB[w].inputs || []).forEach((i) => {
-                if (i.ware === "エネルギーセル") return;
+                (consumedBy[i.ware] || (consumedBy[i.ware] = [])).push(w);
+                if (i.ware === ENERGY) return;
                 edges.push({ from: i.ware, to: w });
                 (outAdj[i.ware] || (outAdj[i.ware] = [])).push(w);
                 (inAdj[w] || (inAdj[w] = [])).push(i.ware);
             }),
         );
 
-        // 列ごとに振り分け
+        // 列内は資源ファミリーを固定し、その中で資源集合の近さと線の交差を両立させる。
         const cols = [];
         all.forEach((w) => {
             (cols[memo[w]] || (cols[memo[w]] = [])).push(w);
         });
-        cols.forEach((c) => c.sort((a, b) => a.localeCompare(b))); // 初期順を安定化
+        cols.forEach((col) =>
+            col.sort((a, b) => {
+                const familyDiff =
+                    FAMILY_ORDER.indexOf(familyOf(a)) -
+                    FAMILY_ORDER.indexOf(familyOf(b));
+                return (
+                    familyDiff ||
+                    rawCenter(a) - rawCenter(b) ||
+                    a.localeCompare(b)
+                );
+            }),
+        );
         const pos = {};
-        cols.forEach((c) => c.forEach((w, i) => (pos[w] = i)));
+        cols.forEach((col) => col.forEach((w, i) => (pos[w] = i)));
 
-        // 交差低減: barycenter を数回 (左右交互)
+        // barycenter を左右交互に適用。ただしファミリー帯をまたぐ移動はさせない。
         for (let pass = 0; pass < 8; pass++) {
-            const ltr = pass % 2 === 0;
-            const order = cols.map((_, i) => i);
+            const ltr = pass % 2 === 0,
+                order = cols.map((_, i) => i);
             if (!ltr) order.reverse();
             order.forEach((ci) => {
                 const col = cols[ci];
-                if (!col) return;
-                const bary = {};
-                col.forEach((w) => {
-                    const nb = (ltr ? inAdj[w] : outAdj[w]) || [];
-                    bary[w] = nb.length
-                        ? nb.reduce((s, n) => s + pos[n], 0) / nb.length
-                        : pos[w];
+                if (!col || ci === 0) return;
+                FAMILY_ORDER.forEach((family) => {
+                    const slots = col
+                            .map((w, i) => ({ w, i }))
+                            .filter(({ w }) => familyOf(w) === family),
+                        bary = {};
+                    slots.forEach(({ w }) => {
+                        const nb = (ltr ? inAdj[w] : outAdj[w]) || [];
+                        bary[w] = nb.length
+                            ? nb.reduce((sum, n) => sum + pos[n], 0) / nb.length
+                            : pos[w];
+                    });
+                    const sorted = slots
+                        .map(({ w }) => w)
+                        .sort(
+                            (a, b) =>
+                                bary[a] - bary[b] ||
+                                rawCenter(a) - rawCenter(b) ||
+                                a.localeCompare(b),
+                        );
+                    slots.forEach(({ i }, n) => (col[i] = sorted[n]));
                 });
-                col.sort((a, b) => bary[a] - bary[b]);
                 col.forEach((w, i) => (pos[w] = i));
             });
         }
 
-        // レイアウト寸法
-        const NW = 132,
-            NH = 30,
-            ROW = 60,
-            COL = 186,
-            PAD = 24;
-        const maxRows = cols.reduce((m, c) => Math.max(m, c.length), 0);
-        const W = (cols.length - 1) * COL + NW + PAD * 2;
-        const H = maxRows * ROW + PAD * 2 - (ROW - NH);
-
-        const xy = {};
+        // ファミリーごとに全列共通の高さを確保し、同系統のウェアを横方向に追いやすくする。
+        const NW = 160,
+            NH = 42,
+            ROW = 58,
+            COL = 216,
+            PAD_X = 24,
+            PAD_Y = 16,
+            BAND_HEAD = 24,
+            BAND_PAD = 10,
+            BAND_GAP = 12;
+        const activeFamilies = FAMILY_ORDER.filter((family) =>
+            all.some((w) => familyOf(w) === family),
+        );
+        const familyRows = {},
+            bandY = {},
+            bandH = {};
+        activeFamilies.forEach((family) => {
+            familyRows[family] = Math.max(
+                1,
+                ...cols.map(
+                    (col) => col.filter((w) => familyOf(w) === family).length,
+                ),
+            );
+        });
+        let cursorY = PAD_Y;
+        activeFamilies.forEach((family) => {
+            bandY[family] = cursorY;
+            bandH[family] =
+                BAND_HEAD +
+                BAND_PAD * 2 +
+                (familyRows[family] - 1) * ROW +
+                NH;
+            cursorY += bandH[family] + BAND_GAP;
+        });
+        const W = (cols.length - 1) * COL + NW + PAD_X * 2,
+            H = cursorY - BAND_GAP + PAD_Y,
+            xy = {};
         cols.forEach((col, ci) => {
-            const startY = PAD + ((maxRows - col.length) * ROW) / 2;
-            col.forEach((w, i) => {
-                xy[w] = { x: PAD + ci * COL, y: startY + i * ROW };
+            activeFamilies.forEach((family) => {
+                const members = col.filter((w) => familyOf(w) === family),
+                    availableH =
+                        bandH[family] - BAND_HEAD - BAND_PAD * 2,
+                    usedH = members.length
+                        ? (members.length - 1) * ROW + NH
+                        : 0,
+                    startY =
+                        bandY[family] +
+                        BAND_HEAD +
+                        BAND_PAD +
+                        (availableH - usedH) / 2;
+                members.forEach((w, i) => {
+                    xy[w] = {
+                        x: PAD_X + ci * COL,
+                        y: startY + i * ROW,
+                    };
+                });
             });
         });
 
-        const colX = (ci) => PAD + ci * COL; // 列の左端 x
-        const ctrY = (w) => xy[w].y + NH / 2; // ノード中心 y
+        const ctrY = (w) => xy[w].y + NH / 2;
         const esc = (s) =>
-            s
+            String(s)
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
                 .replace(/>/g, "&gt;")
                 .replace(/"/g, "&quot;");
-
-        // --- 直線配線: ノードの右端から相手ノードの左端まで直線で結ぶ ---
         const f = (n) => Math.round(n * 10) / 10;
         edges.forEach((e) => {
-            e.sx = colX(memo[e.from]) + NW;
+            e.sx = xy[e.from].x + NW;
             e.sy = ctrY(e.from);
-            e.tx = colX(memo[e.to]);
+            e.tx = xy[e.to].x;
             e.ty = ctrY(e.to);
         });
         function pathD(e) {
-            return `M${f(e.sx)} ${f(e.sy)} L${f(e.tx)} ${f(e.ty)}`;
+            const bend = Math.max(38, (e.tx - e.sx) * 0.45);
+            return (
+                `M${f(e.sx)} ${f(e.sy)} ` +
+                `C${f(e.sx + bend)} ${f(e.sy)} ` +
+                `${f(e.tx - bend)} ${f(e.ty)} ${f(e.tx)} ${f(e.ty)}`
+            );
         }
 
-        // エッジ (背面)
-        let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-        svg += `<g class="edges">`;
+        // 帯 → エッジ → ノードの順に SVG を構築する。
+        let svg =
+            `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" ` +
+            `role="img" aria-labelledby="flowTitle flowDesc" xmlns="http://www.w3.org/2000/svg">` +
+            `<title id="flowTitle">X4 生産ウェア依存関係</title>` +
+            `<desc id="flowDesc">左から右へ生産段階が進み、縦方向は上流の資源系統別に配置されています。</desc>` +
+            `<g class="lanes">`;
+        activeFamilies.forEach((family) => {
+            svg +=
+                `<g class="flane ${family}">` +
+                `<rect x="8" y="${f(bandY[family])}" width="${W - 16}" height="${f(bandH[family])}" rx="4"/>` +
+                `<text x="${PAD_X}" y="${f(bandY[family] + 15)}">${esc(FAMILY_LABEL[family])}</text>` +
+                `</g>`;
+        });
+        svg += `</g><g class="edges">`;
         edges.forEach((e) => {
             svg += `<path class="fedge" data-from="${esc(e.from)}" data-to="${esc(e.to)}" d="${pathD(e)}"/>`;
         });
         svg += `</g><g class="nodes">`;
-        // ノード (前面)
         all.forEach((w) => {
             const { x, y } = xy[w],
-                raw = isRaw(w);
+                raw = isRaw(w),
+                terminal = hasRecipe(DB[w]) && !consumedBy[w]?.length,
+                deps = rawDeps(w),
+                sourceText = deps.length ? deps.join("、") : "原材料入力なし";
             svg +=
-                `<g class="fnode ${raw ? "raw" : "prod"}" data-ware="${esc(w)}">` +
-                `<rect x="${x}" y="${y}" width="${NW}" height="${NH}" rx="4"/>` +
-                `<text x="${x + NW / 2}" y="${y + NH / 2}" text-anchor="middle">${esc(w)}</text>` +
-                `</g>`;
+                `<a class="fnode ${raw ? "raw" : "prod"}${terminal ? " terminal" : ""}" data-ware="${esc(w)}" href="#flow" ` +
+                `aria-label="${esc(w)}。${raw ? "採掘・購入素材" : `上流資源: ${sourceText}`}${terminal ? "。派生レシピのない最終ウェア" : ""}。クリックで依存関係を固定表示">` +
+                `<rect x="${x}" y="${f(y)}" width="${NW}" height="${NH}" rx="4"/>` +
+                `<text class="fnode-name" x="${x + NW / 2}" y="${f(y + NH / 2)}" text-anchor="middle">${esc(w)}</text>` +
+                (terminal
+                    ? `<path class="fterminal-mark" d="M${x + NW + 5} ${f(y + 7)} H${x + NW + 10} V${f(y + NH - 7)} H${x + NW + 5}"/>`
+                    : "") +
+                `</a>`;
         });
         svg += `</g></svg>`;
         el.innerHTML = svg;
 
-        // hover で依存を強調 (PC のみ。タッチでは静的表示)
-        const nodes = [...el.querySelectorAll(".fnode")];
-        const paths = [...el.querySelectorAll(".fedge")];
+        // ホバーは一時表示、クリックは固定表示。タッチ端末でも同じ依存強調を利用できる。
+        const nodes = [...el.querySelectorAll(".fnode")],
+            paths = [...el.querySelectorAll(".fedge")];
+        let pinned = "";
         function clearHi() {
             el.classList.remove("hovering");
             paths.forEach((p) => p.classList.remove("hot1", "hot2"));
-            nodes.forEach((m) => m.classList.remove("self", "on1", "on2"));
-        }
-        nodes.forEach((n) => {
-            n.addEventListener("mouseenter", () => {
-                const w = n.dataset.ware;
-                // 上流(必要素材)を BFS。dist=ホバーノードからの最短距離(0=自身,1=直下素材,…)
-                const dist = { [w]: 0 },
-                    q = [w];
-                while (q.length) {
-                    const cur = q.shift(),
-                        r = DB[cur];
-                    if (!hasRecipe(r)) continue;
-                    r.inputs.forEach((i) => {
-                        if (dist[i.ware] === undefined) {
-                            dist[i.ware] = dist[cur] + 1;
-                            q.push(i.ware);
-                        }
-                    });
-                }
-                // 線: 消費先(to)が部分グラフ内なら点灯。to が自身=直下供給=アンバー、それ以外=シアン
-                paths.forEach((p) => {
-                    const d = dist[p.dataset.to];
-                    p.classList.toggle("hot1", d === 0);
-                    p.classList.toggle("hot2", d !== undefined && d > 0);
-                });
-                // ノード: 1次=アンバー / 2次以降=シアン / 自身=自身強調
-                nodes.forEach((m) => {
-                    const d = dist[m.dataset.ware];
-                    m.classList.toggle("self", d === 0);
-                    m.classList.toggle("on1", d === 1);
-                    m.classList.toggle("on2", d !== undefined && d >= 2);
-                });
-                el.classList.add("hovering");
+            nodes.forEach((node) => {
+                node.classList.remove("self", "on1", "on2");
+                if (!pinned) node.removeAttribute("aria-current");
             });
-            n.addEventListener("mouseleave", clearHi);
+        }
+        function highlight(w) {
+            const dist = { [w]: 0 },
+                q = [w];
+            while (q.length) {
+                const cur = q.shift(),
+                    r = DB[cur];
+                if (!hasRecipe(r)) continue;
+                r.inputs.forEach((i) => {
+                    if (i.ware === ENERGY || dist[i.ware] !== undefined) return;
+                    dist[i.ware] = dist[cur] + 1;
+                    q.push(i.ware);
+                });
+            }
+            paths.forEach((p) => {
+                const d = dist[p.dataset.to];
+                p.classList.toggle("hot1", d === 0);
+                p.classList.toggle("hot2", d !== undefined && d > 0);
+            });
+            nodes.forEach((node) => {
+                const d = dist[node.dataset.ware];
+                node.classList.toggle("self", d === 0);
+                node.classList.toggle("on1", d === 1);
+                node.classList.toggle("on2", d !== undefined && d >= 2);
+                if (pinned === node.dataset.ware)
+                    node.setAttribute("aria-current", "true");
+                else node.removeAttribute("aria-current");
+            });
+            el.classList.add("hovering");
+        }
+        nodes.forEach((node) => {
+            node.addEventListener("mouseenter", () => highlight(node.dataset.ware));
+            node.addEventListener("mouseleave", () =>
+                pinned ? highlight(pinned) : clearHi(),
+            );
+            node.addEventListener("focus", () => highlight(node.dataset.ware));
+            node.addEventListener("blur", () =>
+                pinned ? highlight(pinned) : clearHi(),
+            );
+            node.addEventListener("click", (ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                const w = node.dataset.ware;
+                pinned = pinned === w ? "" : w;
+                pinned ? highlight(pinned) : clearHi();
+            });
+        });
+        el.addEventListener("click", () => {
+            pinned = "";
+            clearHi();
+        });
+        el.addEventListener("keydown", (ev) => {
+            if (ev.key !== "Escape") return;
+            pinned = "";
+            clearHi();
         });
     }
 
