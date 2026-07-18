@@ -97,7 +97,7 @@
         color: var(--muted);
         margin-left: auto;
     }
-    /* view tabs (生産ソルバー / セクター資源) */
+    /* view tabs (生産ソルバー / 生産フロー / セクター資源) */
     .tabs {
         margin-left: auto;
         display: flex;
@@ -720,6 +720,7 @@
     <span class="v">v9.0</span>
     <nav class="tabs">
         <button class="tab active" data-view="solver">生産計算</button>
+        <button class="tab" data-view="flow">生産フロー</button>
         <button class="tab" data-view="sectors">セクター資源</button>
     </nav>
 </div>
@@ -787,7 +788,23 @@
 
     <div class="panel">
         <div class="eyebrow">
-            <span class="num">07</span> 生産フロー / Dependency Map
+            <span class="num">07</span> 収益性 / Economics
+        </div>
+        <p class="hint">
+            SEED に avgPrice / volume
+            を記載した全ウェアを表示(目標とは独立)。生産量/h・価値/h は 1
+            基(outputRate)あたり。体積あたり価値 = 平均価格 ÷
+            体積。列見出しクリックで昇順 / 降順ソート。
+        </p>
+        <div class="tscroll"><table id="ecoTable"></table></div>
+    </div>
+</div>
+<!-- /view-solver -->
+
+<div id="view-flow" style="display: none">
+    <div class="panel">
+        <div class="eyebrow">
+            <span class="num">01</span> 生産フロー / Dependency Map
         </div>
         <div class="flow-legend">
             <span class="key"
@@ -801,21 +818,7 @@
         </div>
         <div class="flow-wrap"><div class="flow" id="flow"></div></div>
     </div>
-
-    <div class="panel">
-        <div class="eyebrow">
-            <span class="num">08</span> 収益性 / Economics
-        </div>
-        <p class="hint">
-            SEED に avgPrice / volume
-            を記載した全ウェアを表示(目標とは独立)。生産量/h・価値/h は 1
-            基(outputRate)あたり。体積あたり価値 = 平均価格 ÷
-            体積。列見出しクリックで昇順 / 降順ソート。
-        </p>
-        <div class="tscroll"><table id="ecoTable"></table></div>
-    </div>
 </div>
-<!-- /view-solver -->
 
 <div id="view-sectors" style="display: none">
     <div class="panel">
@@ -2258,16 +2261,16 @@
     }
 
     //============ wire up ============
-    // ビュー切替タブ (生産計算 / セクター資源)
+    // ビュー切替タブ (生産計算 / 生産フロー / セクター資源)
     document.querySelectorAll(".tab").forEach((btn) =>
         btn.addEventListener("click", () => {
             document
                 .querySelectorAll(".tab")
                 .forEach((b) => b.classList.toggle("active", b === btn));
-            $("#view-solver").style.display =
-                btn.dataset.view === "solver" ? "" : "none";
-            $("#view-sectors").style.display =
-                btn.dataset.view === "sectors" ? "" : "none";
+            ["solver", "flow", "sectors"].forEach((view) => {
+                $(`#view-${view}`).style.display =
+                    btn.dataset.view === view ? "" : "none";
+            });
         }),
     );
     const targetList = $("#targetList");
