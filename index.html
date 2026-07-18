@@ -1288,6 +1288,35 @@
             avgPrice: 182,
             volume: 15,
         },
+        ドローン部品: {
+            module: "ドローン部品の製造",
+            outputRate: 315,
+            inputs: [
+                { ware: "エネルギーセル", rate: 180 },
+                { ware: "エンジン部品", rate: 60 },
+                { ware: "船体部品", rate: 60 },
+                { ware: "マイクロチップ", rate: 60 },
+                { ware: "スキャンアレイ", rate: 120 },
+            ],
+            avgPrice: 914,
+            volume: 30,
+        },
+        シールド部品: {
+            module: "シールド部品の製造",
+            outputRate: 579,
+            inputs: [
+                { ware: "エネルギーセル", rate: 210 },
+                { ware: "プラズマ伝導体", rate: 60 },
+                { ware: "量子チューブ", rate: 60 },
+            ],
+            build: [
+                { ware: "クレイトロニクス", amount: 432 },
+                { ware: "エネルギーセル", amount: 865 },
+                { ware: "船体部品", amount: 1583 },
+            ],
+            avgPrice: 188,
+            volume: 10,
+        },
         スキャンアレイ: {
             module: "スキャンアレイの製造",
             outputRate: 216,
