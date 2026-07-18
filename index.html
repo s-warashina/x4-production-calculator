@@ -644,7 +644,7 @@
         stroke: var(--cyan);
         stroke-width: 2;
     }
-    /* hover 強調: 直下(1次)素材=アンバー / 2次以降=シアン を再帰的に点灯 */
+    /* 選択強調: 直下素材=アンバー / 上流素材=シアン / 下流の派生ウェア=グリーン */
     .flow.hovering .fedge {
         opacity: 0.1;
     }
@@ -667,15 +667,31 @@
         stroke-width: 2;
         opacity: 1 !important;
     }
+    .fedge.hot-out1 {
+        stroke: var(--green);
+        stroke-width: 2.3;
+        opacity: 1 !important;
+    }
+    .fedge.hot-out2 {
+        stroke: var(--green);
+        stroke-width: 1.6;
+        opacity: 1 !important;
+    }
     .fnode.self rect,
     .fnode.on1 rect,
     .fnode.on2 rect,
+    .fnode.out1 rect,
+    .fnode.out2 rect,
     .fnode.self text,
     .fnode.on1 text,
     .fnode.on2 text,
+    .fnode.out1 text,
+    .fnode.out2 text,
     .fnode.self .fterminal-mark,
     .fnode.on1 .fterminal-mark,
-    .fnode.on2 .fterminal-mark {
+    .fnode.on2 .fterminal-mark,
+    .fnode.out1 .fterminal-mark,
+    .fnode.out2 .fterminal-mark {
         opacity: 1 !important;
     }
     .fnode.self rect {
@@ -690,6 +706,15 @@
     .fnode.on2 rect {
         stroke: var(--cyan);
         filter: drop-shadow(0 0 5px rgba(52, 216, 232, 0.5));
+    }
+    .fnode.out1 rect {
+        stroke: var(--green);
+        stroke-width: 2;
+        filter: drop-shadow(0 0 6px rgba(95, 210, 154, 0.6));
+    }
+    .fnode.out2 rect {
+        stroke: var(--green);
+        filter: drop-shadow(0 0 4px rgba(95, 210, 154, 0.4));
     }
     /* ---- mobile (iPhone 等) ---- */
     @media (max-width: 560px) {
@@ -872,7 +897,7 @@
             >
             <span class="note"
                 >左 = 素材 / 右 = 加工品 ・ 資源系統ごとに帯分け ・
-                クリックで依存を固定</span
+                選択時: 素材 = 黄/青・派生 = 緑</span
             >
         </div>
         <div class="flow-wrap"><div class="flow" id="flow"></div></div>
@@ -2440,35 +2465,63 @@
         let pinned = "";
         function clearHi() {
             el.classList.remove("hovering");
-            paths.forEach((p) => p.classList.remove("hot1", "hot2"));
+            paths.forEach((p) =>
+                p.classList.remove("hot1", "hot2", "hot-out1", "hot-out2"),
+            );
             nodes.forEach((node) => {
-                node.classList.remove("self", "on1", "on2");
+                node.classList.remove("self", "on1", "on2", "out1", "out2");
                 if (!pinned) node.removeAttribute("aria-current");
             });
         }
         function highlight(w) {
-            const dist = { [w]: 0 },
-                q = [w];
-            while (q.length) {
-                const cur = q.shift(),
+            // 上流: 選択ウェアが必要とする素材を再帰的にたどる。
+            const upDist = { [w]: 0 },
+                upQueue = [w];
+            while (upQueue.length) {
+                const cur = upQueue.shift(),
                     r = DB[cur];
                 if (!hasRecipe(r)) continue;
                 r.inputs.forEach((i) => {
-                    if (i.ware === ENERGY || dist[i.ware] !== undefined) return;
-                    dist[i.ware] = dist[cur] + 1;
-                    q.push(i.ware);
+                    if (i.ware === ENERGY || upDist[i.ware] !== undefined) return;
+                    upDist[i.ware] = upDist[cur] + 1;
+                    upQueue.push(i.ware);
                 });
             }
+
+            // 下流: 選択ウェアを材料として使う派生ウェアを再帰的にたどる。
+            const downDist = { [w]: 0 },
+                downQueue = [w];
+            while (downQueue.length) {
+                const cur = downQueue.shift();
+                (outAdj[cur] || []).forEach((next) => {
+                    if (downDist[next] !== undefined) return;
+                    downDist[next] = downDist[cur] + 1;
+                    downQueue.push(next);
+                });
+            }
+
             paths.forEach((p) => {
-                const d = dist[p.dataset.to];
-                p.classList.toggle("hot1", d === 0);
-                p.classList.toggle("hot2", d !== undefined && d > 0);
+                const upD = upDist[p.dataset.to],
+                    downD = downDist[p.dataset.from];
+                p.classList.toggle("hot1", upD === 0);
+                p.classList.toggle("hot2", upD !== undefined && upD > 0);
+                p.classList.toggle("hot-out1", downD === 0);
+                p.classList.toggle(
+                    "hot-out2",
+                    downD !== undefined && downD > 0,
+                );
             });
             nodes.forEach((node) => {
-                const d = dist[node.dataset.ware];
-                node.classList.toggle("self", d === 0);
-                node.classList.toggle("on1", d === 1);
-                node.classList.toggle("on2", d !== undefined && d >= 2);
+                const upD = upDist[node.dataset.ware],
+                    downD = downDist[node.dataset.ware];
+                node.classList.toggle("self", upD === 0);
+                node.classList.toggle("on1", upD === 1);
+                node.classList.toggle("on2", upD !== undefined && upD >= 2);
+                node.classList.toggle("out1", downD === 1);
+                node.classList.toggle(
+                    "out2",
+                    downD !== undefined && downD >= 2,
+                );
                 if (pinned === node.dataset.ware)
                     node.setAttribute("aria-current", "true");
                 else node.removeAttribute("aria-current");
