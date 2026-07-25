@@ -598,6 +598,32 @@
             stroke-width 0.12s,
             opacity 0.12s;
     }
+    .fedge-label {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.12s;
+    }
+    .fedge-label.show {
+        opacity: 1;
+    }
+    .fedge-label rect {
+        fill: #070d18;
+        stroke: var(--cyan-dim);
+        stroke-width: 1;
+    }
+    .fedge-label text {
+        fill: var(--cyan-soft);
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 10px;
+        font-weight: 600;
+        dominant-baseline: central;
+    }
+    .fedge-label.hot1 rect {
+        stroke: var(--amber);
+    }
+    .fedge-label.hot1 text {
+        fill: var(--amber);
+    }
     .fnode rect {
         transition:
             stroke 0.12s,
@@ -613,6 +639,7 @@
     .fnode .fnode-name {
         font-size: 11px;
         font-weight: 500;
+        transition: transform 0.12s;
     }
     .fnode.raw rect {
         fill: #1a1306;
@@ -627,6 +654,29 @@
     }
     .fnode.prod text {
         fill: var(--cyan-soft);
+    }
+    .fnode .fnode-output,
+    .fnode .fnode-power {
+        visibility: hidden;
+        opacity: 0;
+        font-size: 8.5px;
+        font-weight: 500;
+        transition: opacity 0.12s;
+    }
+    .fnode .fnode-power {
+        fill: var(--amber);
+        font-size: 10px;
+    }
+    .fnode .fnode-output {
+        font-size: 10px;
+    }
+    .fnode.self.prod .fnode-name {
+        transform: translateY(-12px);
+    }
+    .fnode.self.prod .fnode-output,
+    .fnode.self.prod .fnode-power {
+        visibility: visible;
+        opacity: 1 !important;
     }
     .fnode.terminal rect {
         stroke: var(--green);
@@ -897,7 +947,8 @@
             >
             <span class="note"
                 >左 = 素材 / 右 = 加工品 ・ 資源系統ごとに帯分け ・
-                選択時: 素材 = 黄/青・派生 = 緑</span
+                選択時: 1基の生産量・全工程の電力合計・上流必要量/h
+                (線幅 = 量)</span
             >
         </div>
         <div class="flow-wrap"><div class="flow" id="flow"></div></div>
@@ -2410,16 +2461,26 @@
         }
         all.forEach(depth);
 
-        // エッジ (材料 → 生産ウェア) と隣接。エネルギーセルの線は密集を避けるため描画しない。
+        // エッジ (材料 → 生産ウェア) と隣接。
+        // エネルギーセルは量の集計には使うが、線は描かず選択ノード内に合計表示する。
         const edges = [],
+            recipeEdges = {},
             inAdj = {},
             outAdj = {},
             consumedBy = {};
         Object.keys(DB).forEach((w) =>
             (DB[w].inputs || []).forEach((i) => {
                 (consumedBy[i.ware] || (consumedBy[i.ware] = [])).push(w);
-                if (i.ware === ENERGY) return;
-                edges.push({ from: i.ware, to: w });
+                const edge = {
+                    id: edges.length,
+                    from: i.ware,
+                    to: w,
+                    rate: i.rate,
+                    energy: i.ware === ENERGY,
+                };
+                edges.push(edge);
+                (recipeEdges[w] || (recipeEdges[w] = [])).push(edge);
+                if (edge.energy) return;
                 (outAdj[i.ware] || (outAdj[i.ware] = [])).push(w);
                 (inAdj[w] || (inAdj[w] = [])).push(i.ware);
             }),
@@ -2480,9 +2541,9 @@
 
         // ファミリーごとに全列共通の高さを確保し、同系統のウェアを横方向に追いやすくする。
         const NW = 160,
-            NH = 42,
-            ROW = 58,
-            COL = 216,
+            NH = 50,
+            ROW = 64,
+            COL = 236,
             PAD_X = 24,
             PAD_Y = 16,
             BAND_HEAD = 24,
@@ -2550,6 +2611,8 @@
             e.sy = ctrY(e.from);
             e.tx = xy[e.to].x;
             e.ty = ctrY(e.to);
+            e.lx = (e.sx + e.tx) / 2;
+            e.ly = (e.sy + e.ty) / 2;
         });
         function pathD(e) {
             const bend = Math.max(38, (e.tx - e.sx) * 0.45);
@@ -2565,7 +2628,7 @@
             `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" ` +
             `role="img" aria-labelledby="flowTitle flowDesc" xmlns="http://www.w3.org/2000/svg">` +
             `<title id="flowTitle">X4 生産ウェア依存関係</title>` +
-            `<desc id="flowDesc">左から右へ生産段階が進み、縦方向は上流の資源系統別に配置されています。</desc>` +
+            `<desc id="flowDesc">左から右へ生産段階が進みます。ウェアを選択すると、1基の生産量、全工程の電力合計、上流素材の毎時量を表示します。</desc>` +
             `<g class="lanes">`;
         activeFamilies.forEach((family) => {
             svg +=
@@ -2575,21 +2638,42 @@
                 `</g>`;
         });
         svg += `</g><g class="edges">`;
-        edges.forEach((e) => {
-            svg += `<path class="fedge" data-from="${esc(e.from)}" data-to="${esc(e.to)}" d="${pathD(e)}"/>`;
-        });
+        edges
+            .filter((e) => !e.energy)
+            .forEach((e) => {
+                svg += `<path class="fedge" data-edge="${e.id}" data-from="${esc(e.from)}" data-to="${esc(e.to)}" d="${pathD(e)}"/>`;
+            });
+        svg += `</g><g class="edge-labels">`;
+        edges
+            .filter((e) => !e.energy)
+            .forEach((e) => {
+                svg +=
+                    `<g class="fedge-label" data-edge="${e.id}" transform="translate(${f(e.lx)} ${f(e.ly)})" aria-hidden="true">` +
+                    `<rect x="-25" y="-9" width="50" height="18" rx="3"/>` +
+                    `<text x="0" y="0" text-anchor="middle"></text>` +
+                    `</g>`;
+            });
         svg += `</g><g class="nodes">`;
         all.forEach((w) => {
             const { x, y } = xy[w],
                 raw = isRaw(w),
-                terminal = hasRecipe(DB[w]) && !consumedBy[w]?.length,
+                rec = DB[w],
+                recipe = hasRecipe(rec),
+                terminal = recipe && !consumedBy[w]?.length,
                 deps = rawDeps(w),
-                sourceText = deps.length ? deps.join("、") : "原材料入力なし";
+                sourceText = deps.length ? deps.join("、") : "原材料入力なし",
+                ariaText = raw
+                    ? "採掘・購入素材"
+                    : `1基あたり生産量 ${fmt(rec.outputRate)}/h。上流資源: ${sourceText}`;
             svg +=
                 `<a class="fnode ${raw ? "raw" : "prod"}${terminal ? " terminal" : ""}" data-ware="${esc(w)}" href="#flow" ` +
-                `aria-label="${esc(w)}。${raw ? "採掘・購入素材" : `上流資源: ${sourceText}`}${terminal ? "。派生レシピのない最終ウェア" : ""}。クリックで依存関係を固定表示">` +
+                `aria-label="${esc(w)}。${esc(ariaText)}${terminal ? "。派生レシピのない最終ウェア" : ""}。クリックで依存関係を固定表示">` +
                 `<rect x="${x}" y="${f(y)}" width="${NW}" height="${NH}" rx="4"/>` +
                 `<text class="fnode-name" x="${x + NW / 2}" y="${f(y + NH / 2)}" text-anchor="middle">${esc(w)}</text>` +
+                (recipe
+                    ? `<text class="fnode-output" x="${x + NW / 2}" y="${f(y + 27)}" text-anchor="middle">生産 ${esc(fmt(rec.outputRate))}/h</text>` +
+                      `<text class="fnode-power" x="${x + NW / 2}" y="${f(y + 41)}" text-anchor="middle"></text>`
+                    : "") +
                 (terminal
                     ? `<path class="fterminal-mark" d="M${x + NW + 5} ${f(y + 7)} H${x + NW + 10} V${f(y + NH - 7)} H${x + NW + 5}"/>`
                     : "") +
@@ -2600,19 +2684,73 @@
 
         // ホバーは一時表示、クリックは固定表示。タッチ端末でも同じ依存強調を利用できる。
         const nodes = [...el.querySelectorAll(".fnode")],
-            paths = [...el.querySelectorAll(".fedge")];
+            paths = [...el.querySelectorAll(".fedge")],
+            labels = [...el.querySelectorAll(".fedge-label")],
+            labelByEdge = Object.fromEntries(
+                labels.map((label) => [label.dataset.edge, label]),
+            );
         let pinned = "";
         function clearHi() {
             el.classList.remove("hovering");
-            paths.forEach((p) =>
-                p.classList.remove("hot1", "hot2", "hot-out1", "hot-out2"),
+            paths.forEach((p) => {
+                p.classList.remove("hot1", "hot2", "hot-out1", "hot-out2");
+                p.style.removeProperty("stroke-width");
+            });
+            labels.forEach((label) =>
+                label.classList.remove("show", "hot1", "hot2"),
             );
             nodes.forEach((node) => {
                 node.classList.remove("self", "on1", "on2", "out1", "out2");
+                const power = node.querySelector(".fnode-power");
+                if (power) power.textContent = "";
                 if (!pinned) node.removeAttribute("aria-current");
             });
         }
+
+        // 選択ウェア1基分の需要を上流へ展開し、各エッジを流れる毎時量を求める。
+        // 同じ中間素材へ複数の枝が合流する場合も、再帰呼び出しごとの量を加算する。
+        function upstreamFlowRates(w) {
+            const rates = {};
+            const rec = DB[w];
+            if (!hasRecipe(rec)) return rates;
+
+            function add(cur, rate, onPath) {
+                const curRec = DB[cur];
+                if (!hasRecipe(curRec) || onPath.has(cur)) return;
+                const nextPath = new Set(onPath);
+                nextPath.add(cur);
+                const mods = rate / curRec.outputRate;
+                (recipeEdges[cur] || []).forEach((edge) => {
+                    const amount = mods * edge.rate;
+                    rates[edge.id] = (rates[edge.id] || 0) + amount;
+                    add(edge.from, amount, nextPath);
+                });
+            }
+
+            add(w, rec.outputRate, new Set());
+            return rates;
+        }
+
+        function showRateLabel(label, rate, direct) {
+            const value = `${fmt(rate)}/h`;
+            const width = Math.max(50, value.length * 6.4 + 12);
+            label.querySelector("text").textContent = value;
+            const rect = label.querySelector("rect");
+            rect.setAttribute("x", -width / 2);
+            rect.setAttribute("width", width);
+            label.classList.add("show", direct ? "hot1" : "hot2");
+        }
+
         function highlight(w) {
+            paths.forEach((p) => p.style.removeProperty("stroke-width"));
+            labels.forEach((label) =>
+                label.classList.remove("show", "hot1", "hot2"),
+            );
+            nodes.forEach((node) => {
+                const power = node.querySelector(".fnode-power");
+                if (power) power.textContent = "";
+            });
+
             // 上流: 選択ウェアが必要とする素材を再帰的にたどる。
             const upDist = { [w]: 0 },
                 upQueue = [w];
@@ -2639,9 +2777,19 @@
                 });
             }
 
+            const flowRates = upstreamFlowRates(w),
+                visibleRates = paths.map((p) => flowRates[p.dataset.edge] || 0),
+                maxRate = Math.max(0, ...visibleRates),
+                totalEnergy = edges.reduce(
+                    (sum, edge) =>
+                        edge.energy ? sum + (flowRates[edge.id] || 0) : sum,
+                    0,
+                );
             paths.forEach((p) => {
                 const upD = upDist[p.dataset.to],
-                    downD = downDist[p.dataset.from];
+                    downD = downDist[p.dataset.from],
+                    rate = flowRates[p.dataset.edge],
+                    direct = upD === 0;
                 p.classList.toggle("hot1", upD === 0);
                 p.classList.toggle("hot2", upD !== undefined && upD > 0);
                 p.classList.toggle("hot-out1", downD === 0);
@@ -2649,6 +2797,11 @@
                     "hot-out2",
                     downD !== undefined && downD > 0,
                 );
+                if (rate !== undefined && maxRate > 0) {
+                    // 平方根スケールで差を圧縮し、小流量の線も見失わないようにする。
+                    p.style.strokeWidth = `${1.6 + 4.4 * Math.sqrt(rate / maxRate)}px`;
+                    showRateLabel(labelByEdge[p.dataset.edge], rate, direct);
+                }
             });
             nodes.forEach((node) => {
                 const upD = upDist[node.dataset.ware],
@@ -2661,6 +2814,11 @@
                     "out2",
                     downD !== undefined && downD >= 2,
                 );
+                if (upD === 0) {
+                    const power = node.querySelector(".fnode-power");
+                    if (power && totalEnergy > 0)
+                        power.textContent = `電力計 ${fmt(totalEnergy)}/h`;
+                }
                 if (pinned === node.dataset.ware)
                     node.setAttribute("aria-current", "true");
                 else node.removeAttribute("aria-current");
